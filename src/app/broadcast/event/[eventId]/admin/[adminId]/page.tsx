@@ -213,43 +213,6 @@ export default function AdminPage() {
     const socketRef = useRef<Socket | null>(null);
     const sensors = useSensors(useSensor(PointerSensor));
 
-    // Handle drag end for reordering
-    const handleDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-
-        if (!over || active.id === over.id) return;
-
-        const oldIndex = partenaireList2.findIndex((p) => p.id_conferencier === active.id);
-        const newIndex = partenaireList2.findIndex((p) => p.id_conferencier === over.id);
-
-        if (oldIndex === -1 || newIndex === -1) return;
-
-        // Optimistically update UI
-        const newList = arrayMove(partenaireList2, oldIndex, newIndex);
-        setPartenaireList2(newList);
-
-        // Update order on server
-        try {
-            const orderData = newList.map((p, index) => ({
-                id_conferencier: p.id_conferencier,
-                ordre_affichage: index + 1
-            }));
-
-            await fetch(`${API_URL}?action=updateConferencierOrder`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ order: orderData })
-            });
-        } catch (error) {
-            console.error('Error updating order:', error);
-            // Revert on error
-            await getPartenaires({ idEvent: eventId, idConfEvent: adminId });
-        }
-    };
-
-
     // Fetch Initial Data
     useEffect(() => {
         if (!eventId || isNaN(eventId)) return;
