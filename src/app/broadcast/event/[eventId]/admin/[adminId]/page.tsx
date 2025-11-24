@@ -379,8 +379,8 @@ export default function AdminPage() {
     const getPartenaires = async ({ idEvent, idConfEvent }: { idEvent: number, idConfEvent: number }) => {
         try {
             const req = idConfEvent == 0
-                ? `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} and afficher !='0'&exclude_fields=event,conf_event`
-                : `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} AND id_conf_event IN(${idConfEvent}) and afficher !='0'&exclude_fields=event,conf_event`;
+                ? `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} and afficher !='0'&exclude_fields=event,conf_event&order_by=ordre_affichage ASC`
+                : `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} AND id_conf_event IN(${idConfEvent}) and afficher !='0'&exclude_fields=event,conf_event&order_by=ordre_affichage ASC`;
 
             const [partenaires, prestas] = await Promise.all([
                 fetch(req).then(res => res.json()),
@@ -471,11 +471,15 @@ export default function AdminPage() {
                     order: index + 1
                 }));
 
+                console.log(orderUpdates);
                 const params = new URLSearchParams();
                 params.append('order', JSON.stringify(orderUpdates));
 
                 fetch(`${API_URL}?action=updateConferencierOrder`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
                     body: params
                 })
                     .then(response => response.json())
