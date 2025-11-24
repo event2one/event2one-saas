@@ -3,7 +3,7 @@ module.exports = {
         {
             name: 'event2one-saas',
             script: 'server.js',
-            cwd: '/var/www/event2one-saas',
+            cwd: '/var/www/e2o/event2one-saas',
             instances: 1,
             exec_mode: 'cluster',
             watch: false,
