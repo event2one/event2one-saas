@@ -16,6 +16,13 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT || '22224' }}
         script: |
+          # Load nvm
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          
+          # Use Node.js 20
+          nvm use 20
+          
           # Navigate to project directory
           cd /var/www/e2o/event2one-saas
 
