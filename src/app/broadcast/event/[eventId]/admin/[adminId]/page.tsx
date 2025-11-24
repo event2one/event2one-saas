@@ -378,7 +378,7 @@ export default function AdminPage() {
 
     const getPartenaires = async ({ idEvent, idConfEvent }: { idEvent: number, idConfEvent: number }) => {
         try {
-            const req = idConfEvent == 0
+            const req = idConfEvent === 0
                 ? `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} and afficher !='0'&exclude_fields=event,conf_event&order_by=ordre_affichage ASC`
                 : `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} AND id_conf_event IN(${idConfEvent}) and afficher !='0'&exclude_fields=event,conf_event&order_by=ordre_affichage ASC`;
 
