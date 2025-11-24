@@ -4,49 +4,29 @@ on:
   push:
     branches: [ "master" ]
 
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Deploy to Server via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.SSH_PORT || '22224' }}
+        script: |
+          # Navigate to project directory
+          cd /var/www/e2o/event2one-saas
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+          # Pull latest changes
+          git pull origin master
 
-      - name: Install Dependencies
-        run: npm ci
+          # Install dependencies
+          npm install
 
-      - name: Build Application
-        run: npm run build
+          # Build Next.js app
+          npm run build
 
-      - name: Set TERM env
-        run: echo "TERM=xterm" >> $GITHUB_ENV
-
-      - name: Deploy to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          source: "."
-          target: "/var/www/e2o/event2one-saas"
-          strip_components: 0
-
-      - name: Restart PM2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /var/www/e2o/event2one-saas
-            npm install --production
-            pm2 reload ecosystem.config.js
+          # Reload PM2 process
+          pm2 reload ecosystem.config.js
