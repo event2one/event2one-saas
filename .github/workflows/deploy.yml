@@ -34,6 +34,8 @@ jobs:
         source: "."
         target: "/var/www/event2one-saas"
         strip_components: 0
+      env:
+        TERM: xterm
 
     - name: Restart PM2
       uses: appleboy/ssh-action@v1.0.3
