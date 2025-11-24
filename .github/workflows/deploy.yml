@@ -30,9 +30,9 @@ jobs:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.SSH_PORT }}
+        port: ${{ secrets.SSH_PORT || '22224'  }}
         source: "."
-        target: "/var/www/event2one-saas"
+        target: "/var/www/e2o/event2one-saas"
         strip_components: 0
       env:
         TERM: xterm
@@ -45,6 +45,6 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT }}
         script: |
-          cd /var/www/event2one-saas
+          cd /var/www/e2o/event2one-saas
           npm install --production
           pm2 reload ecosystem.config.js
