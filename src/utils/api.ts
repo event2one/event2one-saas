@@ -47,9 +47,9 @@ export async function fetchInitialData(params: FetchParams) {
 
     let partenaireListUrl;
     if (idConfEvent === 0) {
-        partenaireListUrl = `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} and afficher !='0'&exclude_fields=event,conf_event`;
+        partenaireListUrl = `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} and afficher !='0' ORDER BY ordre_affichage ASC&exclude_fields=event,conf_event`;
     } else {
-        partenaireListUrl = `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} AND id_conf_event IN(${idConfEvent}) and afficher !='0'&exclude_fields=event,conf_event`;
+        partenaireListUrl = `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} AND id_conf_event IN(${idConfEvent}) and afficher !='0' ORDER BY ordre_affichage ASC&exclude_fields=event,conf_event`;
     }
 
     // Execute all requests in parallel
