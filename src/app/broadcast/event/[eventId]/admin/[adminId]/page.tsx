@@ -251,7 +251,12 @@ export default function AdminPage() {
 
     // Socket.IO Connection
     useEffect(() => {
-        socketRef.current = io({ path: '/saas/socket.io' });
+        // Detect protocol (http in dev, https in production)
+        const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        socketRef.current = io(socketUrl, {
+            path: '/saas/socket.io',
+            transports: ['websocket', 'polling']
+        });
         const socket = socketRef.current;
         socket.emit('dire_bonjour', { my: 'Bonjour server, je suis admin' });
         socket.on('connect', () => socket.emit('check_connexion', { name: 'admin' }));
@@ -381,6 +386,8 @@ export default function AdminPage() {
             const req = idConfEvent === 0
                 ? `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} and afficher !='0'&exclude_fields=event,conf_event&order_by=ordre_affichage ASC`
                 : `${API_URL}?action=getPartenairesLight&params= AND id_event=${idEvent} AND id_conf_event IN(${idConfEvent}) and afficher !='0'&exclude_fields=event,conf_event&order_by=ordre_affichage ASC`;
+
+
 
             const [partenaires, prestas] = await Promise.all([
                 fetch(req).then(res => res.json()),

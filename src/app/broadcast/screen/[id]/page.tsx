@@ -18,7 +18,11 @@ export default function ScreenPage() {
         console.log('Socket.IO Client [Screen] - Hostname:', window.location.hostname);
 
         // Connect with /saas/socket.io path
-        socketRef.current = io({ path: '/saas/socket.io' });
+        const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        socketRef.current = io(socketUrl, {
+            path: '/saas/socket.io',
+            transports: ['websocket', 'polling']
+        });
         const socket = socketRef.current;
 
         // Join the room for this screen
