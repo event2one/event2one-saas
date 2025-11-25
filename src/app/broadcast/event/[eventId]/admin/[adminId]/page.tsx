@@ -265,8 +265,7 @@ export default function AdminPage() {
         // Detect protocol (http in dev, https in production)
         const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
         socketRef.current = io(socketUrl, {
-            path: '/saas/socket.io',
-            transports: ['websocket', 'polling']
+            path: '/saas/socket.io'
         });
         const socket = socketRef.current;
         socket.emit('dire_bonjour', { my: 'Bonjour server, je suis admin' });

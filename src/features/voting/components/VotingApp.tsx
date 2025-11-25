@@ -609,8 +609,7 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
         // Establish Socket.IO connection
         const socketUrl = window.location.origin;
         socketRef.current = io(socketUrl, {
-            path: '/saas/socket.io',
-            transports: ['websocket', 'polling']
+            path: '/saas/socket.io'
         });
 
         const socket = socketRef.current;
