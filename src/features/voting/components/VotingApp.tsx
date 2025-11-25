@@ -607,11 +607,7 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
         if (typeof window === 'undefined') return;
 
         // Establish Socket.IO connection
-        // Force www subdomain in production to match Apache virtualhost
-        let socketUrl = window.location.origin;
-        if (socketUrl.includes('event2one.com') && !socketUrl.includes('www.')) {
-            socketUrl = socketUrl.replace('event2one.com', 'www.event2one.com');
-        }
+        const socketUrl = window.location.origin;
         socketRef.current = io(socketUrl, {
             path: '/saas/socket.io'
         });

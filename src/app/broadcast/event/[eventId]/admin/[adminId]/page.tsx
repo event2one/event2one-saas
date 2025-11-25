@@ -263,11 +263,7 @@ export default function AdminPage() {
     // Socket.IO Connection
     useEffect(() => {
         // Detect protocol (http in dev, https in production)
-        // Force www subdomain in production to match Apache virtualhost
-        let socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        if (socketUrl.includes('event2one.com') && !socketUrl.includes('www.')) {
-            socketUrl = socketUrl.replace('event2one.com', 'www.event2one.com');
-        }
+        const socketUrl = typeof window !== 'undefined' ? window.location.origin : '';
         socketRef.current = io(socketUrl, {
             path: '/saas/socket.io'
         });
