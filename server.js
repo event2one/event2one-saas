@@ -71,6 +71,30 @@ app.prepare().then(() => {
             console.log('message recu' + data);
         });
 
+        // Admin joins event-specific room for notifications
+        socket.on('admin:join-event', function (data) {
+            const room = `admin-event-${data.ije}`;
+            socket.join(room);
+            console.log(`[ADMIN] Joined room: ${room} (ije: ${data.ije})`);
+            socket.emit('admin:joined', { room });
+        });
+
+        // Voting user connected - notify admin
+        socket.on('voting:user-connected', function (data) {
+            const room = `admin-event-${data.ije}`;
+            const notification = {
+                id: `${Date.now()}-${Math.random()}`,
+                name: `${data.contactDatas.prenom} ${data.contactDatas.nom}`,
+                company: data.contactDatas.societe,
+                email: data.contactDatas.mail,
+                timestamp: Date.now(),
+                ije: data.ije
+            };
+            console.log(`[VOTING] User connected: ${notification.name} (${notification.company})`);
+            console.log(`[VOTING] Emitting to room: ${room} (ije: ${data.ije})`);
+            io.to(room).emit('admin:user-connected', notification);
+        });
+
         socket.on('updateMediaContainer', function (data) {
             const room = `room${data.screenId}`;
             io.sockets.in(room).emit('updateMediaContainer', data);

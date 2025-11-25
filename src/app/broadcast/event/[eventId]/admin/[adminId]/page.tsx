@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import EventSessionSelector from '@/components/EventSessionSelector';
+import { UserConnectionToast } from '@/features/broadcast/components/UserConnectionToast';
 import { Play, Eraser, EyeOff, UserPlus, GripVertical, Search, Monitor, X } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -210,6 +211,16 @@ export default function AdminPage() {
     const [showScreenPanel, setShowScreenPanel] = useState(false);
     const [previewScreenId, setPreviewScreenId] = useState<number>(1);
 
+    // User connection notifications
+    const [newConnections, setNewConnections] = useState<Array<{
+        id: string;
+        name: string;
+        company: string;
+        email: string;
+        timestamp: number;
+        ije: string;
+    }>>([]);
+
     const socketRef = useRef<Socket | null>(null);
     const sensors = useSensors(useSensor(PointerSensor));
 
@@ -259,13 +270,40 @@ export default function AdminPage() {
         });
         const socket = socketRef.current;
         socket.emit('dire_bonjour', { my: 'Bonjour server, je suis admin' });
-        socket.on('connect', () => socket.emit('check_connexion', { name: 'admin' }));
+
+        socket.on('connect', () => {
+            console.log('Admin: Socket connected, socket.id =', socket.id);
+            socket.emit('check_connexion', { name: 'admin' });
+            // Join admin room for this session - use adminId (id_conf_event) for session isolation
+            console.log('Admin: Emitting admin:join-event with ije:', adminId);
+            socket.emit('admin:join-event', { ije: adminId });
+            console.log('Admin joined session room:', adminId);
+        });
+
+        socket.on('admin:joined', (data: { room: string }) => {
+            console.log('Admin: Server confirmed join to room:', data.room);
+        });
+
         socket.on('updateMediaContainer', (data: { screenId: string, name: string, iframeSrc: string }) => console.log('updateMediaContainer', data));
+
+        // Listen for new user connections
+        socket.on('admin:user-connected', (notification: {
+            id: string;
+            name: string;
+            company: string;
+            email: string;
+            timestamp: number;
+            ije: string;
+        }) => {
+            console.log('Admin received notification:', notification);
+            setNewConnections(prev => [...prev, notification]);
+        });
+        console.log('Admin: Listener for admin:user-connected registered');
 
         return () => {
             socket.disconnect();
         };
-    }, []);
+    }, [adminId]);
 
     const display = (id_jury_event_enc: string, src: string, screenIdOverride?: number) => {
         const currentScreenId = screenIdOverride ? screenIdOverride.toString() : previewScreenId.toString();
@@ -866,6 +904,22 @@ export default function AdminPage() {
                                 </div>
                             </motion.div>
                         )}
+                    </AnimatePresence>
+                </div>
+
+                {/* User Connection Notifications */}
+                <div className="fixed top-20 right-4 z-50 flex flex-col items-end">
+                    <AnimatePresence>
+                        {newConnections.map((connection) => (
+                            <UserConnectionToast
+                                key={connection.id}
+                                id={connection.id}
+                                name={connection.name}
+                                company={connection.company}
+                                timestamp={connection.timestamp}
+                                onDismiss={(id) => setNewConnections(prev => prev.filter(c => c.id !== id))}
+                            />
+                        ))}
                     </AnimatePresence>
                 </div>
             </div>
