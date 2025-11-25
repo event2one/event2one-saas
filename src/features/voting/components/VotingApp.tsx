@@ -95,7 +95,8 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
 
     const slug = params.slug || [];
     const langId = slug[0] || 'fr';
-    const ije = slug[1] || '';
+    const ijeRaw = slug[1] || '';
+    const ije = decodeURIComponent(ijeRaw);
 
     // Helper to extract other params
     // New format: /fr/ije/id_conf_event/idContact
@@ -418,12 +419,13 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
             });
             setVoteIsValid(true);
 
-            if (contactDatas.id_contact) {
-                await getParcoursEval({
-                    id_jury_event: juryEvent.id_jury_event,
-                    id_contact: contactDatas.id_contact
-                });
-            }
+            // if (contactDatas.id_contact) {
+            //     await getParcoursEval({
+            //         id_jury_event: juryEvent.id_jury_event,
+            //         id_contact: contactDatas.id_contact
+            //     });
+            // }
+
         } catch (err) {
             console.error('Error saving vote', err);
         }
@@ -492,18 +494,29 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
     const fetchDemos = async () => {
         await fetch(`//www.mlg-consulting.com/smart_territory/form/api.php?action=getVoteDemos&ije=${ije}`)
             .then(res => res.json())
-            .then(res => setDemos(res))
+            .then(res => {
+
+                console.log(`https://www.mlg-consulting.com/smart_territory/form/api.php?action=getVoteDemos&ije=${ije}`)
+                console.log('fetchDemos', res);
+                setDemos(res)
+            })
+
     }
 
     const fetchDemosByEventCycleLang = async () => {
         await fetch(`https://www.mlg-consulting.com/smart_territory/form/api.php?action=getVoteDemosByEventCycleLang&ije=${ije}`)
             .then(res => res.json())
-            .then(res => setDemos(res))
+            .then(res => {
+                console.log('fetchDemosByEventCycleLang', res);
+                setDemos(res);
+            })
     }
 
     const fetchJuryEvent = async () => {
         if (!ije) return;
-        const url = `https://www.mlg-consulting.com/smart_territory/form/api.php?action=getJuryEvent&ije=${ije}`;
+
+        const encodedIje = encodeURIComponent(ije);
+        const url = `https://www.mlg-consulting.com/smart_territory/form/api.php?action=getJuryEvent&ije=${encodedIje}`;
 
         try {
             await fetch(url)
@@ -511,10 +524,10 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
                 .then(juryEvent => {
                     setJuryEvent(juryEvent);
 
-                    getParcoursEval({
-                        id_jury_event: juryEvent.id_jury_event,
-                        id_contact: idContact ? idContact : contactDatas.id_contact
-                    });
+                    // getParcoursEval({
+                    //     id_jury_event: juryEvent.id_jury_event,
+                    //     id_contact: idContact ? idContact : contactDatas.id_contact
+                    // });
 
                     return juryEvent;
                 })
@@ -682,6 +695,8 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
             }
         }
     }, [juryEvent, idContact, contactDatas, slug]);
+
+
 
     if (!juryEvent || !translationsForLanguage) return <div className="text-center p-10">Loading...</div>;
 
