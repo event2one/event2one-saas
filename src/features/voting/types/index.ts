@@ -20,6 +20,7 @@ export interface ContactDatas {
 export interface JuryEvent {
     id_event: string | number;
     id_jury_event: string | number;
+    close_registration: string;
     nom: string;
     nom_us: string;
     id_conf_event_type: string;

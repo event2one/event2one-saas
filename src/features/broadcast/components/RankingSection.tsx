@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import { VotingResult } from '@/features/broadcast/types';
 import { useConfEvent } from '@/features/broadcast/contexts/ConfEventContext';
 import { Trophy, Medal, Award } from 'lucide-react';
@@ -17,8 +18,6 @@ export function RankingSection({ idJuryEvent: propIdJuryEvent }: RankingSectionP
         const { confEvent } = useConfEvent();
         confEventData = confEvent;
         contextIdJuryEvent = confEvent?.id_jury_event;
-        console.log('ConfEvent from context:', confEvent);
-        console.log('id_jury_event from context:', contextIdJuryEvent);
     } catch (error) {
         // Context not available, will use prop
         console.log('ConfEvent context not available, using prop');
@@ -27,10 +26,9 @@ export function RankingSection({ idJuryEvent: propIdJuryEvent }: RankingSectionP
     // Use context value if available, otherwise fallback to prop
     const idJuryEvent = contextIdJuryEvent ?? propIdJuryEvent;
 
-    console.log('Final idJuryEvent to use:', idJuryEvent, '(from context:', contextIdJuryEvent, ', from prop:', propIdJuryEvent, ')');
-
     const [rankingData, setRankingData] = useState<VotingResult[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0); // Used to trigger re-fetch
 
     useEffect(() => {
         const fetchRankingData = async () => {
@@ -40,11 +38,17 @@ export function RankingSection({ idJuryEvent: propIdJuryEvent }: RankingSectionP
                 return;
             }
 
-            setIsLoading(true);
+            // Don't set loading on background refreshes if we already have data
+            if (rankingData.length === 0) setIsLoading(true);
+
             try {
                 console.log('Fetching ranking data - confEvent context:', confEventData);
-                console.log('Using id_jury_event:', confEventData.jury_event.id_jury_event);
-                const filter = encodeURIComponent(`WHERE id_jury_event=${confEventData.jury_event.id_jury_event}`);
+                console.log('Using id_jury_event:', confEventData?.jury_event?.id_jury_event || idJuryEvent);
+
+                // Use the id_jury_event from context if available, otherwise prop
+                const targetIdJuryEvent = confEventData?.jury_event?.id_jury_event || idJuryEvent;
+
+                const filter = encodeURIComponent(`WHERE id_jury_event=${targetIdJuryEvent}`);
                 const endpoint = `https://www.myglobalvillage.com/api/?action=getParcoursEval&filter=${filter}`;
 
                 console.log('Fetching ranking data from:', endpoint);
@@ -63,6 +67,33 @@ export function RankingSection({ idJuryEvent: propIdJuryEvent }: RankingSectionP
         };
 
         fetchRankingData();
+    }, [idJuryEvent, refreshTrigger]);
+
+    // Socket.IO connection for real-time updates
+    useEffect(() => {
+        if (typeof window === 'undefined' || !idJuryEvent) return;
+
+        const socketUrl = window.location.origin;
+        const socket = io(socketUrl, {
+            path: '/saas/socket.io'
+        });
+
+        socket.on('connect', () => {
+            console.log('RankingSection: Socket connected');
+            // Join the admin room for this event
+            // Note: idJuryEvent here corresponds to 'ije' or 'adminId' passed to admin:join-event
+            socket.emit('admin:join-event', { ije: idJuryEvent });
+        });
+
+        socket.on('admin:vote-updated', (data: any) => {
+            console.log('RankingSection: Received vote update', data);
+            // Trigger a re-fetch
+            setRefreshTrigger(prev => prev + 1);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, [idJuryEvent]);
 
     // Calculate total score and sort
@@ -73,7 +104,8 @@ export function RankingSection({ idJuryEvent: propIdJuryEvent }: RankingSectionP
                 (parseInt(candidate.meeting) || 0) +
                 (parseInt(candidate.comprehension) || 0) +
                 (parseInt(candidate.timing) || 0) +
-                (parseInt(candidate.support) || 0)
+                (parseInt(candidate.support) || 0) +
+                (parseInt(candidate.presentation) || 0)
         }))
         .sort((a, b) => b.totalScore - a.totalScore);
 
@@ -121,9 +153,10 @@ export function RankingSection({ idJuryEvent: propIdJuryEvent }: RankingSectionP
                             <th className="text-left py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Candidat</th>
                             <th className="text-left py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Société</th>
                             <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Meeting</th>
-                            <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Compréhension</th>
-                            <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Timing</th>
-                            <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Support</th>
+                            <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Quality of presentation</th>
+                            <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Impact of the solution</th>
+                            <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Innovation of the solution</th>
+                            <th className="text-center py-3 px-2 font-semibold text-neutral-700 dark:text-neutral-300">Interest for my business sector</th>
                             <th className="text-center py-3 px-2 font-semibold text-emerald-600 dark:text-emerald-400">Total</th>
                         </tr>
                     </thead>
@@ -156,6 +189,11 @@ export function RankingSection({ idJuryEvent: propIdJuryEvent }: RankingSectionP
                                 </td>
                                 <td className="py-3 px-2 text-center">
                                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold">
+                                        {candidate.presentation}
+                                    </span>
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 font-semibold">
                                         {candidate.comprehension}
                                     </span>
                                 </td>

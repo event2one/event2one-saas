@@ -93,6 +93,14 @@ app.prepare().then(() => {
             io.to(room).emit('admin:user-connected', notification);
         });
 
+        // New vote or connection request - notify admin to refresh stats
+        socket.on('voting:new-vote', function (data) {
+            const room = `admin-event-${data.ije}`;
+            console.log(`[VOTING] New vote/update from user in event ${data.ije}`);
+            // Broadcast to admin room to trigger data refresh
+            io.to(room).emit('admin:vote-updated', data);
+        });
+
         socket.on('updateMediaContainer', function (data) {
             const room = `room${data.screenId}`;
             io.sockets.in(room).emit('updateMediaContainer', data);

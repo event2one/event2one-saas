@@ -79,5 +79,6 @@ export interface VotingResult {
     comprehension: string;
     timing: string;
     support: string;
+    presentation: string;
     id_jury_event: number;
 }

@@ -352,7 +352,7 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
             id_event: juryEvent.id_event
         }
 
-        await fetch(`//www.mlg-consulting.com/smart_territory/form/api.php?action=createParcoursEval&debug=n`, {
+        await fetch(`https://www.mlg-consulting.com/smart_territory/form/api.php?action=createParcoursEval&debug=n`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -370,6 +370,24 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
             .catch(error => {
                 console.error("Error creating ParcoursEval:", error);
             });
+
+        // Emit socket event for real-time updates
+        if (socketRef.current && juryEvent) {
+            // Use id_conf_event from juryEvent or URL logic similar to user-connected
+            let confEventId = (juryEvent as any).id_conf_event?.id_conf_event;
+            if (slug[2] && slug[2] !== 'c' && slug[2] !== 'type' && slug[2] !== 'vote' && !isNaN(Number(slug[2]))) {
+                confEventId = slug[2];
+            }
+
+            if (confEventId) {
+                console.log('VotingApp: Emitting voting:new-vote', { ije: confEventId });
+                socketRef.current.emit('voting:new-vote', {
+                    ije: confEventId,
+                    type: 'create',
+                    data: createParcoursEvalData
+                });
+            }
+        }
     }
 
     const updateParcoursEval = async (data: any) => {
@@ -381,7 +399,7 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
             id_jury_event: juryEvent.id_jury_event,
             id_event: juryEvent.id_event
         }
-        await fetch(`//www.mlg-consulting.com/smart_territory/form/api.php?action=updateParcoursEval&debug=y`, {
+        await fetch(`https://www.mlg-consulting.com/smart_territory/form/api.php?action=updateParcoursEval&debug=n`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -399,6 +417,24 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
             .catch(error => {
                 console.error("Error updating ParcoursEval:", error);
             });
+
+        // Emit socket event for real-time updates
+        if (socketRef.current && juryEvent) {
+            // Use id_conf_event from juryEvent or URL logic similar to user-connected
+            let confEventId = (juryEvent as any).id_conf_event?.id_conf_event;
+            if (slug[2] && slug[2] !== 'c' && slug[2] !== 'type' && slug[2] !== 'vote' && !isNaN(Number(slug[2]))) {
+                confEventId = slug[2];
+            }
+
+            if (confEventId) {
+                console.log('VotingApp: Emitting voting:new-vote', { ije: confEventId });
+                socketRef.current.emit('voting:new-vote', {
+                    ije: confEventId,
+                    type: 'update',
+                    data: updateParcoursEvalData
+                });
+            }
+        }
     }
 
     const handleValidVote = async (e: React.MouseEvent) => {
@@ -413,7 +449,7 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
         };
 
         try {
-            await fetch('https://www.event2one.com/parcours/vote/do.php?do=save_vote2&debug=y', {
+            await fetch('https://www.event2one.com/parcours/vote/do.php?do=save_vote2&debug=n', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
@@ -492,7 +528,7 @@ const VotingApp: React.FC<VotingAppProps> = ({ params }) => {
     }
 
     const fetchDemos = async () => {
-        await fetch(`//www.mlg-consulting.com/smart_territory/form/api.php?action=getVoteDemos&ije=${ije}`)
+        await fetch(`https://www.mlg-consulting.com/smart_territory/form/api.php?action=getVoteDemos&ije=${ije}`)
             .then(res => res.json())
             .then(res => {
 

@@ -108,7 +108,7 @@ const Demo: React.FC<DemoProps> = ({ translationsForLanguage, demo, handleNote, 
 
             {/* juryEvent.id_jury.close_registration != 'y' check might need adjustment based on actual data structure */}
             {/* Assuming id_jury exists on juryEvent based on usage */}
-            {(juryEvent as any).id_jury?.close_registration != 'y'
+            {juryEvent.close_registration != 'y'
                 && ['67', '74', '', '88', '66', '63', '96', '97', '116'].includes(juryEvent.id_conf_event_type)
                 && !notDisplayRating.includes(String(juryEvent.id_event)) &&
                 voteType != "matchmaking" &&
@@ -119,7 +119,6 @@ const Demo: React.FC<DemoProps> = ({ translationsForLanguage, demo, handleNote, 
                     </div>
 
                     <Note critere="presentation" title={translationsForLanguage.rankPresentation} handleNote={handleNote} id_presta={demo.id_presta} notes={notes} />
-
                     <Note critere="comprehension" title={translationsForLanguage.rankImpact} handleNote={handleNote} id_presta={demo.id_presta} notes={notes} />
                     <Note critere="timing" title={translationsForLanguage.rankInnovation} handleNote={handleNote} id_presta={demo.id_presta} notes={notes} />
                     <Note critere="support" title={translationsForLanguage.rankInterest} handleNote={handleNote} id_presta={demo.id_presta} notes={notes} />
@@ -128,7 +127,7 @@ const Demo: React.FC<DemoProps> = ({ translationsForLanguage, demo, handleNote, 
                 </div>
             }
 
-            {(juryEvent as any).id_jury?.close_registration == 'y' && <div className="alert alert-info mt-5"> The voting is now closed; however, we offer you the opportunity to get in touch with this candidate by clicking the button below.</div>}
+            {juryEvent.close_registration == 'y' && <div className="alert alert-info mt-5"> The voting is now closed; however, we offer you the opportunity to get in touch with this candidate by clicking the button below.</div>}
 
             {!notDisplayMeetingButton.includes(String(juryEvent.id_event)) &&
                 <div className="flex   items-center justify-center">
