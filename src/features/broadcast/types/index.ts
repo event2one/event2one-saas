@@ -68,3 +68,16 @@ export interface ConfEventContribution {
 export interface ContactStatut {
     [key: string]: unknown;
 }
+
+export interface VotingResult {
+    id_parcours_eval: string;
+    prenom: string;
+    nom: string;
+    societe: string;
+    email: string;
+    meeting: string;
+    comprehension: string;
+    timing: string;
+    support: string;
+    id_jury_event: number;
+}

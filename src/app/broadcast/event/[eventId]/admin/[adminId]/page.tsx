@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import EventSessionSelector from '@/components/EventSessionSelector';
 import { UserConnectionToast } from '@/features/broadcast/components/UserConnectionToast';
+import { RankingSection } from '@/features/broadcast/components/RankingSection';
+import { ConfEventProvider } from '@/features/broadcast/contexts/ConfEventContext';
 import { Play, Eraser, EyeOff, UserPlus, GripVertical, Search, Monitor, X } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -546,382 +548,396 @@ export default function AdminPage() {
         );
     }
 
+    // Extract current confEvent from the list (should match adminId)
+    const currentConfEvent = confEventListLight.find(
+        ce => ce.id_conf_event === adminId.toString()
+    ) || null;
+
+    console.log('Current confEvent for admin:', currentConfEvent);
+
     return (
-        <AdminLayout>
-            <div className="min-h-screen bg-neutral-50 dark:bg-linear-to-br dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
-                <div className="sticky top-0 z-10 backdrop-blur-xl bg-neutral-900/90 border-b border-neutral-800">
-                    <div className="container mx-auto px-4 py-2">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div>
-                                    <h1 className="text-lg font-bold text-white">Gestion des Intervenants</h1>
-                                    <p className="text-[10px] text-neutral-400">Event {eventId} • Session {adminId}</p>
-                                </div>
-                                <div className="hidden md:flex items-center gap-2">
-                                    <EventSessionSelector
-                                        futureEvents={futureEvents}
-                                        confEventListLight={confEventListLight}
-                                        idEvent={eventId}
-                                        idConfEvent={adminId}
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex gap-2 items-center">
-                                <div className="relative">
-                                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-neutral-400" />
-                                    <Input
-                                        type="text"
-                                        placeholder="Filtrer..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="h-7 w-40 pl-8 text-xs bg-neutral-800 border-neutral-700 focus:ring-emerald-600 text-white placeholder:text-neutral-500"
-                                    />
-                                </div>
-                                <Button variant="outline" size="sm" onClick={() => display('177820', 'https://www.event2one.com/screen_manager/content/blank.php', 9)}
-
-                                    className="h-7 text-xs border-neutral-700 hover:bg-neutral-800 bg-neutral-800 hover:text-white hover:border-neutral-600  ">
-                                    <EyeOff className="w-3 h-3 mr-1" />Masquer titrage
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setShowScreenPanel(true)}
-                                    className="h-7 text-xs border-neutral-700 bg-neutral-800 hover:bg-neutral-800 hover:text-white hover:border-neutral-600 hover:shadow-lg hover:shadow-neutral-600"
-                                >
-                                    <Monitor className="w-3 h-3 mr-1" />
-                                    Voir les écrans
-                                </Button>
-                                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700">
-                                            <UserPlus className="w-3 h-3 mr-1" />Ajouter
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[600px] bg-neutral-900 border-neutral-800">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-white">Ajouter un intervenant</DialogTitle>
-                                        </DialogHeader>
-                                        <div className="space-y-4">
-                                            {/* Contact Type Selector */}
-                                            <div>
-                                                <label className="text-sm font-medium text-neutral-300 mb-2 block">
-                                                    Type de contact
-                                                </label>
-                                                <select
-                                                    value={selectedContactType}
-                                                    onChange={(e) => setSelectedContactType(e.target.value)}
-                                                    className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
-                                                >
-                                                    <option value="">Sélectionner un type...</option>
-                                                    {eventContactTypeList.map((type) => (
-                                                        <option key={type.id_event_contact_type} value={type.id_event_contact_type}>
-                                                            {type.libelle}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            {/* Search Input */}
-                                            <div className="relative">
-                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Rechercher par nom, prénom, société..."
-                                                    onChange={getContactList}
-                                                    className="pl-10 bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500"
-                                                />
-                                            </div>
-                                            <div className="max-h-[300px] overflow-y-auto space-y-2">
-                                                {searchContactList.length > 0 ? (
-                                                    searchContactList.map((contact) => (
-                                                        <div
-                                                            key={contact.id_contact}
-                                                            className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${selectedContact?.id_contact === contact.id_contact
-                                                                ? 'bg-emerald-900/30 border-emerald-600'
-                                                                : 'bg-neutral-800/50 hover:bg-neutral-800 border-neutral-700/50'
-                                                                }`}
-                                                            onClick={() => setSelectedContact(contact)}
-                                                        >
-                                                            <Avatar className="w-10 h-10 border border-neutral-700">
-                                                                <Image src={contact.photos?.tiny} alt="Contact search result photo" width={40} height={40} className="object-cover" />
-                                                            </Avatar>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="text-white font-medium text-sm">
-                                                                    {contact.prenom} <span className="uppercase">{contact.nom}</span>
-                                                                </p>
-                                                                <p className="text-neutral-400 text-xs truncate">{contact.societe}</p>
-                                                            </div>
-                                                            {contact.flag && (
-                                                                <Image src={contact.flag} alt="Flag" width={20} height={16} className="w-5 h-4 rounded-sm object-cover" />
-                                                            )}
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <div className="text-center py-8 text-neutral-500 text-sm">
-                                                        <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                                        <p>Commencez à taper pour rechercher un contact</p>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Position Button */}
-                                            <div className="pt-4 border-t border-neutral-800">
-                                                <Button
-                                                    onClick={async () => {
-                                                        if (selectedContact && selectedContactType) {
-                                                            setIsPositioning(true);
-                                                            await handleCreateConferencier(selectedContact, selectedContactType, adminId.toString());
-                                                            setIsPositioning(false);
-                                                            setIsDialogOpen(false);
-                                                            setSelectedContact(null);
-                                                            setSelectedContactType('');
-                                                            setSearchContactList([]);
-                                                        }
-                                                    }}
-                                                    disabled={!selectedContact || !selectedContactType || isPositioning}
-                                                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-700 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                                >
-                                                    {isPositioning ? (
-                                                        <>
-                                                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                            </svg>
-                                                            <span>Positionnement...</span>
-                                                        </>
-                                                    ) : (
-                                                        'Positionner le contact'
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                                <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-                                    <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-neutral-800">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-white">Confirmer la suppression</DialogTitle>
-                                        </DialogHeader>
-                                        <div className="py-4">
-                                            <p className="text-neutral-300 text-sm">
-                                                Êtes-vous sûr de vouloir masquer cet intervenant ?
-                                            </p>
-                                        </div>
-                                        <div className="flex justify-end gap-3">
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => setIsConfirmDialogOpen(false)}
-                                                className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
-                                                disabled={isHiding}
-                                            >
-                                                Annuler
-                                            </Button>
-                                            <Button
-                                                onClick={confirmHideConferencier}
-                                                className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-                                                disabled={isHiding}
-                                            >
-                                                {isHiding ? (
-                                                    <>
-                                                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                        <span>Traitement...</span>
-                                                    </>
-                                                ) : (
-                                                    'Confirmer'
-                                                )}
-                                            </Button>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-
-                                <Dialog open={isEditPrestaDialogOpen} onOpenChange={setIsEditPrestaDialogOpen}>
-                                    <DialogContent className="sm:max-w-[500px] bg-neutral-900 border-neutral-800">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-white">Modifier la prestation</DialogTitle>
-                                        </DialogHeader>
-                                        {editingPresta && (
-                                            <div className="space-y-4 py-4">
-                                                <div>
-                                                    <label className="text-sm font-medium text-neutral-300 mb-1 block">Nom de la prestation</label>
-                                                    <Input
-                                                        value={editingPresta.presta_nom}
-                                                        onChange={(e) => setEditingPresta({ ...editingPresta, presta_nom: e.target.value })}
-                                                        className="bg-neutral-800 border-neutral-700 text-white"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-sm font-medium text-neutral-300 mb-1 block">Punchline</label>
-                                                    <Input
-                                                        value={editingPresta.punchline || ''}
-                                                        onChange={(e) => setEditingPresta({ ...editingPresta, punchline: e.target.value })}
-                                                        className="bg-neutral-800 border-neutral-700 text-white"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-sm font-medium text-neutral-300 mb-1 block">URL Vidéo</label>
-                                                    <Input
-                                                        value={editingPresta.video_url || ''}
-                                                        onChange={(e) => setEditingPresta({ ...editingPresta, video_url: e.target.value })}
-                                                        className="bg-neutral-800 border-neutral-700 text-white"
-                                                    />
-                                                </div>
-                                                <div className="flex justify-end gap-3 pt-4">
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => setIsEditPrestaDialogOpen(false)}
-                                                        className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
-                                                        disabled={isUpdatingPresta}
-                                                    >
-                                                        Annuler
-                                                    </Button>
-                                                    <Button
-                                                        onClick={handleUpdatePresta}
-                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                                        disabled={isUpdatingPresta}
-                                                    >
-                                                        {isUpdatingPresta ? 'Enregistrement...' : 'Enregistrer'}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex relative">
-                    <div className="flex-1 container mx-auto px-4 py-2 transition-all duration-300">
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                            <SortableContext items={partenaireList2.filter(p => {
-                                const term = searchTerm.toLowerCase();
-                                const contact = p.contact;
-                                return (
-                                    contact?.nom?.toLowerCase().includes(term) ||
-                                    contact?.prenom?.toLowerCase().includes(term) ||
-                                    contact?.societe?.toLowerCase().includes(term)
-                                );
-                            }).map(p => p.id_conferencier)} strategy={verticalListSortingStrategy}>
-                                <div className="space-y-0.5">
-                                    {partenaireList2 && partenaireList2.filter(p => {
-                                        const term = searchTerm.toLowerCase();
-                                        const contact = p.contact;
-                                        return (
-                                            contact?.nom?.toLowerCase().includes(term) ||
-                                            contact?.prenom?.toLowerCase().includes(term) ||
-                                            contact?.societe?.toLowerCase().includes(term)
-                                        );
-                                    }).map((partenaire, index) => {
-                                        // Get the first prestation from the list
-                                        const presta = partenaire.contact?.prestas_list?.[0];
-                                        if (!partenaire.contact) return null;
-                                        return (
-                                            <SortableContactRow
-                                                key={partenaire.id_conferencier}
-                                                partenaire={partenaire}
-                                                presta={presta}
-                                                index={index}
-                                                idEvent={eventId}
-                                                onPublish={publishAllContent}
-                                                onClear={clearJuryScreens}
-                                                onHide={handleUpdateConferencier}
-                                                onEdit={handleEditPresta}
-                                            />
-                                        );
-                                    })}
-
-
-                                    {(!partenaireList2 || partenaireList2.length === 0) && (
-                                        <div className="flex items-center justify-center py-12">
-                                            <motion.svg width="60" height="60" viewBox="0 0 100 100" className="text-white">
-                                                <motion.path
-                                                    d="M 50 10 L 90 35 L 75 80 L 25 80 L 10 35 Z"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="3"
-                                                    initial={{ pathLength: 0 }}
-                                                    animate={{ pathLength: [0, 1, 1, 0], rotate: [0, 0, 360, 360] }}
-                                                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                                                />
-                                            </motion.svg>
-                                        </div>
-                                    )}
-                                </div>
-                            </SortableContext>
-                        </DndContext>
-                    </div>
-
-                    {/* Screen Preview Side Panel */}
-                    <AnimatePresence>
-                        {showScreenPanel && (
-                            <motion.div
-                                initial={{ width: 0, opacity: 0 }}
-                                animate={{ width: 400, opacity: 1 }}
-                                exit={{ width: 0, opacity: 0 }}
-                                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                                className="sticky top-[57px] h-[calc(100vh-57px)] bg-neutral-900 border-l border-neutral-800 shadow-2xl z-40 flex flex-col overflow-hidden"
-                            >
-                                <div className="flex items-center justify-between p-4 border-b border-neutral-800 min-w-[400px]">
-                                    <h2 className="text-white font-semibold flex items-center gap-2">
-                                        <Monitor className="w-4 h-4" />
-                                        Aperçu Écran
-                                    </h2>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setShowScreenPanel(false)}
-                                        className="h-8 w-8 p-0 text-neutral-400 hover:text-white hover:bg-neutral-800"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                                <div className="p-4 space-y-4 flex-1 flex flex-col min-w-[400px]">
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-neutral-400">Sélectionner un écran</label>
-                                        <select
-                                            value={previewScreenId}
-                                            onChange={(e) => setPreviewScreenId(Number(e.target.value))}
-                                            className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
-                                        >
-                                            {Array.from({ length: 50 }, (_, i) => i + 1).map((num) => (
-                                                <option key={num} value={num}>
-                                                    Écran {num}
-                                                </option>
-                                            ))}
-                                        </select>
+        <ConfEventProvider confEvent={currentConfEvent} isLoading={isLoading}>
+            <AdminLayout>
+                <div className="min-h-screen bg-neutral-50 dark:bg-linear-to-br dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+                    <div className="sticky top-0 z-10 backdrop-blur-xl bg-neutral-900/90 border-b border-neutral-800">
+                        <div className="container mx-auto px-4 py-2">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div>
+                                        <h1 className="text-lg font-bold text-white">Gestion des Intervenants</h1>
+                                        <p className="text-[10px] text-neutral-400">Event {eventId} • Session {adminId}</p>
                                     </div>
-                                    <div className="flex-1 bg-black rounded-lg overflow-hidden border border-neutral-800 relative">
-                                        <iframe
-                                            src={`/saas/broadcast/screen/${previewScreenId}`}
-                                            className="absolute inset-0 w-full h-full border-0"
-                                            title={`Screen ${previewScreenId}`}
+                                    <div className="hidden md:flex items-center gap-2">
+                                        <EventSessionSelector
+                                            futureEvents={futureEvents}
+                                            confEventListLight={confEventListLight}
+                                            idEvent={eventId}
+                                            idConfEvent={adminId}
                                         />
                                     </div>
                                 </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                                <div className="flex gap-2 items-center">
+                                    <div className="relative">
+                                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-neutral-400" />
+                                        <Input
+                                            type="text"
+                                            placeholder="Filtrer..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="h-7 w-40 pl-8 text-xs bg-neutral-800 border-neutral-700 focus:ring-emerald-600 text-white placeholder:text-neutral-500"
+                                        />
+                                    </div>
+                                    <Button variant="outline" size="sm" onClick={() => display('177820', 'https://www.event2one.com/screen_manager/content/blank.php', 9)}
 
-                {/* User Connection Notifications */}
-                <div className="fixed top-20 right-4 z-50 flex flex-col items-end">
-                    <AnimatePresence>
-                        {newConnections.map((connection) => (
-                            <UserConnectionToast
-                                key={connection.id}
-                                id={connection.id}
-                                name={connection.name}
-                                company={connection.company}
-                                timestamp={connection.timestamp}
-                                onDismiss={(id) => setNewConnections(prev => prev.filter(c => c.id !== id))}
-                            />
-                        ))}
-                    </AnimatePresence>
+                                        className="h-7 text-xs border-neutral-700 hover:bg-neutral-800 bg-neutral-800 hover:text-white hover:border-neutral-600  ">
+                                        <EyeOff className="w-3 h-3 mr-1" />Masquer titrage
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setShowScreenPanel(true)}
+                                        className="h-7 text-xs border-neutral-700 bg-neutral-800 hover:bg-neutral-800 hover:text-white hover:border-neutral-600 hover:shadow-lg hover:shadow-neutral-600"
+                                    >
+                                        <Monitor className="w-3 h-3 mr-1" />
+                                        Voir les écrans
+                                    </Button>
+                                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700">
+                                                <UserPlus className="w-3 h-3 mr-1" />Ajouter
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-[600px] bg-neutral-900 border-neutral-800">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-white">Ajouter un intervenant</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="space-y-4">
+                                                {/* Contact Type Selector */}
+                                                <div>
+                                                    <label className="text-sm font-medium text-neutral-300 mb-2 block">
+                                                        Type de contact
+                                                    </label>
+                                                    <select
+                                                        value={selectedContactType}
+                                                        onChange={(e) => setSelectedContactType(e.target.value)}
+                                                        className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                                    >
+                                                        <option value="">Sélectionner un type...</option>
+                                                        {eventContactTypeList.map((type) => (
+                                                            <option key={type.id_event_contact_type} value={type.id_event_contact_type}>
+                                                                {type.libelle}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Search Input */}
+                                                <div className="relative">
+                                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="Rechercher par nom, prénom, société..."
+                                                        onChange={getContactList}
+                                                        className="pl-10 bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500"
+                                                    />
+                                                </div>
+                                                <div className="max-h-[300px] overflow-y-auto space-y-2">
+                                                    {searchContactList.length > 0 ? (
+                                                        searchContactList.map((contact) => (
+                                                            <div
+                                                                key={contact.id_contact}
+                                                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${selectedContact?.id_contact === contact.id_contact
+                                                                    ? 'bg-emerald-900/30 border-emerald-600'
+                                                                    : 'bg-neutral-800/50 hover:bg-neutral-800 border-neutral-700/50'
+                                                                    }`}
+                                                                onClick={() => setSelectedContact(contact)}
+                                                            >
+                                                                <Avatar className="w-10 h-10 border border-neutral-700">
+                                                                    <Image src={contact.photos?.tiny} alt="Contact search result photo" width={40} height={40} className="object-cover" />
+                                                                </Avatar>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-white font-medium text-sm">
+                                                                        {contact.prenom} <span className="uppercase">{contact.nom}</span>
+                                                                    </p>
+                                                                    <p className="text-neutral-400 text-xs truncate">{contact.societe}</p>
+                                                                </div>
+                                                                {contact.flag && (
+                                                                    <Image src={contact.flag} alt="Flag" width={20} height={16} className="w-5 h-4 rounded-sm object-cover" />
+                                                                )}
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="text-center py-8 text-neutral-500 text-sm">
+                                                            <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                                            <p>Commencez à taper pour rechercher un contact</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Position Button */}
+                                                <div className="pt-4 border-t border-neutral-800">
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (selectedContact && selectedContactType) {
+                                                                setIsPositioning(true);
+                                                                await handleCreateConferencier(selectedContact, selectedContactType, adminId.toString());
+                                                                setIsPositioning(false);
+                                                                setIsDialogOpen(false);
+                                                                setSelectedContact(null);
+                                                                setSelectedContactType('');
+                                                                setSearchContactList([]);
+                                                            }
+                                                        }}
+                                                        disabled={!selectedContact || !selectedContactType || isPositioning}
+                                                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-neutral-700 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                    >
+                                                        {isPositioning ? (
+                                                            <>
+                                                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                </svg>
+                                                                <span>Positionnement...</span>
+                                                            </>
+                                                        ) : (
+                                                            'Positionner le contact'
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                    <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+                                        <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-neutral-800">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-white">Confirmer la suppression</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="py-4">
+                                                <p className="text-neutral-300 text-sm">
+                                                    Êtes-vous sûr de vouloir masquer cet intervenant ?
+                                                </p>
+                                            </div>
+                                            <div className="flex justify-end gap-3">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => setIsConfirmDialogOpen(false)}
+                                                    className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                                                    disabled={isHiding}
+                                                >
+                                                    Annuler
+                                                </Button>
+                                                <Button
+                                                    onClick={confirmHideConferencier}
+                                                    className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+                                                    disabled={isHiding}
+                                                >
+                                                    {isHiding ? (
+                                                        <>
+                                                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            <span>Traitement...</span>
+                                                        </>
+                                                    ) : (
+                                                        'Confirmer'
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    <Dialog open={isEditPrestaDialogOpen} onOpenChange={setIsEditPrestaDialogOpen}>
+                                        <DialogContent className="sm:max-w-[500px] bg-neutral-900 border-neutral-800">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-white">Modifier la prestation</DialogTitle>
+                                            </DialogHeader>
+                                            {editingPresta && (
+                                                <div className="space-y-4 py-4">
+                                                    <div>
+                                                        <label className="text-sm font-medium text-neutral-300 mb-1 block">Nom de la prestation</label>
+                                                        <Input
+                                                            value={editingPresta.presta_nom}
+                                                            onChange={(e) => setEditingPresta({ ...editingPresta, presta_nom: e.target.value })}
+                                                            className="bg-neutral-800 border-neutral-700 text-white"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium text-neutral-300 mb-1 block">Punchline</label>
+                                                        <Input
+                                                            value={editingPresta.punchline || ''}
+                                                            onChange={(e) => setEditingPresta({ ...editingPresta, punchline: e.target.value })}
+                                                            className="bg-neutral-800 border-neutral-700 text-white"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm font-medium text-neutral-300 mb-1 block">URL Vidéo</label>
+                                                        <Input
+                                                            value={editingPresta.video_url || ''}
+                                                            onChange={(e) => setEditingPresta({ ...editingPresta, video_url: e.target.value })}
+                                                            className="bg-neutral-800 border-neutral-700 text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-end gap-3 pt-4">
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={() => setIsEditPrestaDialogOpen(false)}
+                                                            className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                                                            disabled={isUpdatingPresta}
+                                                        >
+                                                            Annuler
+                                                        </Button>
+                                                        <Button
+                                                            onClick={handleUpdatePresta}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                            disabled={isUpdatingPresta}
+                                                        >
+                                                            {isUpdatingPresta ? 'Enregistrement...' : 'Enregistrer'}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex relative">
+                        <div className="flex-1 container mx-auto px-4 py-2 transition-all duration-300">
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                <SortableContext items={partenaireList2.filter(p => {
+                                    const term = searchTerm.toLowerCase();
+                                    const contact = p.contact;
+                                    return (
+                                        contact?.nom?.toLowerCase().includes(term) ||
+                                        contact?.prenom?.toLowerCase().includes(term) ||
+                                        contact?.societe?.toLowerCase().includes(term)
+                                    );
+                                }).map(p => p.id_conferencier)} strategy={verticalListSortingStrategy}>
+                                    <div className="space-y-0.5">
+                                        {partenaireList2 && partenaireList2.filter(p => {
+                                            const term = searchTerm.toLowerCase();
+                                            const contact = p.contact;
+                                            return (
+                                                contact?.nom?.toLowerCase().includes(term) ||
+                                                contact?.prenom?.toLowerCase().includes(term) ||
+                                                contact?.societe?.toLowerCase().includes(term)
+                                            );
+                                        }).map((partenaire, index) => {
+                                            // Get the first prestation from the list
+                                            const presta = partenaire.contact?.prestas_list?.[0];
+                                            if (!partenaire.contact) return null;
+                                            return (
+                                                <SortableContactRow
+                                                    key={partenaire.id_conferencier}
+                                                    partenaire={partenaire}
+                                                    presta={presta}
+                                                    index={index}
+                                                    idEvent={eventId}
+                                                    onPublish={publishAllContent}
+                                                    onClear={clearJuryScreens}
+                                                    onHide={handleUpdateConferencier}
+                                                    onEdit={handleEditPresta}
+                                                />
+                                            );
+                                        })}
+
+
+                                        {(!partenaireList2 || partenaireList2.length === 0) && (
+                                            <div className="flex items-center justify-center py-12">
+                                                <motion.svg width="60" height="60" viewBox="0 0 100 100" className="text-white">
+                                                    <motion.path
+                                                        d="M 50 10 L 90 35 L 75 80 L 25 80 L 10 35 Z"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="3"
+                                                        initial={{ pathLength: 0 }}
+                                                        animate={{ pathLength: [0, 1, 1, 0], rotate: [0, 0, 360, 360] }}
+                                                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                                    />
+                                                </motion.svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+                        </div>
+
+                        {/* Ranking Section */}
+                        <div className="container mx-auto px-4 py-6">
+                            <RankingSection idJuryEvent={adminId} />
+                        </div>
+
+                        {/* Screen Preview Side Panel */}
+                        <AnimatePresence>
+                            {showScreenPanel && (
+                                <motion.div
+                                    initial={{ width: 0, opacity: 0 }}
+                                    animate={{ width: 400, opacity: 1 }}
+                                    exit={{ width: 0, opacity: 0 }}
+                                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                    className="sticky top-[57px] h-[calc(100vh-57px)] bg-neutral-900 border-l border-neutral-800 shadow-2xl z-40 flex flex-col overflow-hidden"
+                                >
+                                    <div className="flex items-center justify-between p-4 border-b border-neutral-800 min-w-[400px]">
+                                        <h2 className="text-white font-semibold flex items-center gap-2">
+                                            <Monitor className="w-4 h-4" />
+                                            Aperçu Écran
+                                        </h2>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowScreenPanel(false)}
+                                            className="h-8 w-8 p-0 text-neutral-400 hover:text-white hover:bg-neutral-800"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="p-4 space-y-4 flex-1 flex flex-col min-w-[400px]">
+                                        <div className="space-y-2">
+                                            <label className="text-sm text-neutral-400">Sélectionner un écran</label>
+                                            <select
+                                                value={previewScreenId}
+                                                onChange={(e) => setPreviewScreenId(Number(e.target.value))}
+                                                className="w-full bg-neutral-800 border border-neutral-700 rounded-md px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                            >
+                                                {Array.from({ length: 50 }, (_, i) => i + 1).map((num) => (
+                                                    <option key={num} value={num}>
+                                                        Écran {num}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="flex-1 bg-black rounded-lg overflow-hidden border border-neutral-800 relative">
+                                            <iframe
+                                                src={`/saas/broadcast/screen/${previewScreenId}`}
+                                                className="absolute inset-0 w-full h-full border-0"
+                                                title={`Screen ${previewScreenId}`}
+                                            />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* User Connection Notifications */}
+                    <div className="fixed top-20 right-4 z-50 flex flex-col items-end">
+                        <AnimatePresence>
+                            {newConnections.map((connection) => (
+                                <UserConnectionToast
+                                    key={connection.id}
+                                    id={connection.id}
+                                    name={connection.name}
+                                    company={connection.company}
+                                    timestamp={connection.timestamp}
+                                    onDismiss={(id) => setNewConnections(prev => prev.filter(c => c.id !== id))}
+                                />
+                            ))}
+                        </AnimatePresence>
+                    </div>
                 </div>
-            </div>
-        </AdminLayout >
+            </AdminLayout>
+        </ConfEventProvider>
     );
 };
