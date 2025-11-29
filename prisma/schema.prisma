@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model contacts {
+  id_contact                                                      Int       @id @default(autoincrement())
+  mail                                                            String    @db.VarChar(100)
+  prenom                                                          String    @default("") @db.VarChar(100)
+  nom                                                             String    @default("") @db.VarChar(100)
+  photo                                                           String    @default("silhouette_homme.jpg") @db.VarChar(200)
+  logo                                                            String    @default("no_picture.jpg") @db.VarChar(100)
+  login                                                           String    @default("") @db.VarChar(50)
+  pass                                                            String    @default("") @db.VarChar(50)
+  password                                                        String    @default("") @db.VarChar(200)
+  civil                                                           String    @default("") @db.Char(1)
+  fonction                                                        String    @default("") @db.VarChar(250)
+  societe                                                         String    @default("") @db.VarChar(150)
+  tel                                                             String    @default("") @db.VarChar(50)
+  port                                                            String    @default("") @db.VarChar(30)
+  date_creat                                                      DateTime  @default(now()) @db.DateTime(0)
+  
+  // Relations
+  rcc                                                             rcc[]
+
+  @@index([mail], map: "mail")
+  @@index([nom], map: "nom")
+  @@index([societe], map: "societe")
+  @@index([login], map: "login")
+}
+
+model rcc {
+  id_rcc              Int       @id @default(autoincrement())
+  id_contact          Int       @default(0)
+  rcc_login           String    @default("") @db.VarChar(50)
+  rcc_pass            String    @default("") @db.VarChar(20)
+  token               String    @default("") @db.VarChar(100)
+  statut              Int?      @db.SmallInt
+  jour                DateTime  @default(dbgenerated("'0000-00-00 00:00:00'")) @db.DateTime(0)
+  locked              String?   @db.VarChar(1)
+  last_password_update DateTime? @db.DateTime(0)
+  first_connexion     String?   @db.VarChar(1)
+  contrat             String    @default("") @db.VarChar(200)
+  
+  // Relations
+  contact             contacts  @relation(fields: [id_contact], references: [id_contact], onDelete: NoAction, onUpdate: NoAction, map: "rcc_ibfk_1")
+
+  @@index([id_contact], map: "id_contact")
+  @@index([statut], map: "statut")
+}
