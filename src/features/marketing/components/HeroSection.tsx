@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+
 
 export default function HeroSection() {
     return (
@@ -51,13 +51,13 @@ export default function HeroSection() {
                     {/* Hero Image */}
                     <div className="relative max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-teal-500/20 border border-white/10 backdrop-blur-sm bg-white/5 p-2">
                         <div className="relative aspect-video rounded-xl overflow-hidden">
-                            <Image
-                                src="https://www.mlg-consulting.com/manager_cc/docs/archives/eto_capture.png"
-                                alt="Interface Event2One"
-                                width={1200}
-                                height={675}
+                            <video
+                                src="https://cdn.pixabay.com/video/2024/03/12/203987-923133879_large.mp4"
                                 className="w-full h-full object-cover"
-                                priority
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
                             />
                         </div>
                     </div>

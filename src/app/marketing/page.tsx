@@ -4,6 +4,7 @@ import LogoMarquee from '@/features/marketing/components/LogoMarquee';
 import SolutionsFeature from '@/features/marketing/components/SolutionsFeature';
 import StatsSection from '@/features/marketing/components/StatsSection';
 import CTASection from '@/features/marketing/components/CTASection';
+import FAQSection from '@/features/marketing/components/FAQSection';
 
 export default function MarketingPage() {
     return (
@@ -13,6 +14,7 @@ export default function MarketingPage() {
             <LogoMarquee />
             <SolutionsFeature />
             <StatsSection />
+            <FAQSection />
             <CTASection />
         </>
     );
