@@ -1,6 +1,6 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
+import { authClient } from '@/lib/auth-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
@@ -14,6 +14,7 @@ function SignInForm() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const registered = searchParams.get('registered');
+    const callbackUrl = searchParams.get('callbackUrl') ?? '/saas';
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -25,20 +26,19 @@ function SignInForm() {
         const password = formData.get('password') as string;
 
         try {
-            const result = await signIn('credentials', {
+            const { data, error } = await authClient.signIn.email({
                 email,
                 password,
-                redirect: false,
             });
 
-            if (result?.error) {
+            if (error) {
                 setError('Email ou mot de passe incorrect');
                 setLoading(false);
             } else {
-                router.push('/');
+                router.push(callbackUrl);
                 router.refresh();
             }
-        } catch (error) {
+        } catch {
             setError('Une erreur est survenue');
             setLoading(false);
         }
@@ -58,7 +58,10 @@ function SignInForm() {
                 <div className="grid gap-2">
                     <Button
                         variant="outline"
-                        onClick={() => signIn('google', { callbackUrl: '/' })}
+                        onClick={() => authClient.signIn.social({
+                            provider: 'google',
+                            callbackURL: callbackUrl
+                        })}
                         className="w-full"
                     >
                         <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -81,27 +84,22 @@ function SignInForm() {
                         </svg>
                         Continue with Google
                     </Button>
-
+                </div>
+                <div className="grid gap-2">
                     <Button
                         variant="outline"
-                        onClick={() => signIn('apple', { callbackUrl: '/' })}
+                        onClick={() => authClient.signIn.social({
+                            provider: 'linkedin',
+                            callbackURL: callbackUrl
+                        })}
                         className="w-full"
                     >
-                        <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                         
+                        <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.983 3.5C3.343 3.5 2 4.843 2 6.483c0 1.64 1.343 2.983 2.983 2.983s2.983-1.343 2.983-2.983C7.966 4.843 6.623 3.5 4.983 3.5zM2.4 8.4h5.167V21H2.4V8.4zM9.334 8.4h4.958v1.712h.07c.69-1.31 2.377-2.694 4.895-2.694 5.234 0 6.2 3.445 6.2 7.922V21h-5.167v-6.844c0-1.632-.03-3.732-2.272-3.732-2.272 0-2.618 1.772-2.618 3.604V21H9.334V8.4z" fill="#0A66C2"/>
                         </svg>
-                        Continue with Apple
-                    </Button>
 
-                    <Button
-                        variant="outline"
-                        onClick={() => signIn('linkedin', { callbackUrl: '/' })}
-                        className="w-full"
-                    >
-                        <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="#0A66C2">
-                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                        </svg>
-                        Continue with LinkedIn
+                        Continue with Linkedin
                     </Button>
                 </div>
 
@@ -166,7 +164,7 @@ function SignInForm() {
                 </form>
 
                 <div className="text-center text-sm text-muted-foreground">
-                    Don't have an account?{' '}
+                    Don&apos;t have an account?{' '}
                     <Link href="/signup" className="text-primary underline-offset-4 hover:underline font-medium">
                         Sign up
                     </Link>

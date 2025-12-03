@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # On remplace le service "mysql" par "mariadb"
+  mariadb:
+    image: mariadb:10.6  # <-- Version alignée sur votre PROD
+    container_name: mon_saas_db
+    restart: always
+    environment:
+      # MariaDB utilise ces variables (similaires à MySQL)
+      MARIADB_ROOT_PASSWORD: password123
+      MARIADB_DATABASE: event2one_com_www
+      MARIADB_USER: saas_user
+      MARIADB_PASSWORD: saas_password
+    # Commande pour forcer l'UTF-8mb4 (Recommandé pour Next.js/Prisma)
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - saas_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: mon_saas_pma
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mariadb # Doit matcher le nom du service ci-dessus
+      - PMA_PORT=3306
+    depends_on:
+      - mariadb
+    networks:
+      - saas_network
+
+networks:
+  saas_network:
+    driver: bridge
+
+volumes:
+  db_data:

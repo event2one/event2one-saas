@@ -41,7 +41,7 @@ export default function MarketingNav() {
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <Link href="/marketing" className="text-2xl font-extrabold">
-                        <span className="bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-slate-400 to-teal-400 bg-clip-text text-transparent">
                             event2one
                         </span>
                     </Link>
@@ -55,7 +55,7 @@ export default function MarketingNav() {
                                 className="text-slate-300 hover:text-white transition-colors duration-200 font-medium relative group"
                             >
                                 Accueil
-                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-teal-400 to-cyan-400 group-hover:w-full transition-all duration-300"></span>
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-slate-400 to-teal-400 group-hover:w-full transition-all duration-300"></span>
                             </Link>
                         </li>
                         <li>
@@ -65,7 +65,7 @@ export default function MarketingNav() {
                                 className="text-slate-300 hover:text-white transition-colors duration-200 font-medium relative group"
                             >
                                 Fonctionnalités
-                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-teal-400 to-cyan-400 group-hover:w-full transition-all duration-300"></span>
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-slate-400 to-teal-400 group-hover:w-full transition-all duration-300"></span>
                             </Link>
                         </li>
                         <li>
@@ -75,7 +75,7 @@ export default function MarketingNav() {
                                 className="text-slate-300 hover:text-white transition-colors duration-200 font-medium relative group"
                             >
                                 Solutions
-                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-teal-400 to-cyan-400 group-hover:w-full transition-all duration-300"></span>
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-slate-400 to-teal-400 group-hover:w-full transition-all duration-300"></span>
                             </Link>
                         </li>
                         <li>
@@ -84,7 +84,7 @@ export default function MarketingNav() {
                                 className="text-slate-300 hover:text-white transition-colors duration-200 font-medium relative group"
                             >
                                 Tarification
-                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-teal-400 to-cyan-400 group-hover:w-full transition-all duration-300"></span>
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-slate-400 to-teal-400 group-hover:w-full transition-all duration-300"></span>
                             </Link>
                         </li>
                         <li>
@@ -94,16 +94,21 @@ export default function MarketingNav() {
                                 className="text-slate-300 hover:text-white transition-colors duration-200 font-medium relative group"
                             >
                                 Expérience
-                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-teal-400 to-cyan-400 group-hover:w-full transition-all duration-300"></span>
+                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-slate-400 to-teal-400 group-hover:w-full transition-all duration-300"></span>
                             </Link>
                         </li>
                         <li>
                             <Link
                                 href="/marketing#contact"
                                 onClick={(e) => scrollToSection(e, 'contact')}
-                                className="px-6 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5"
+                                className="px-6 py-2 bg-gradient-to-r from-slate-600 to-teal-600 hover:from-slate-500 hover:to-teal-500 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5"
                             >
                                 Contact
+                            </Link>
+                        </li>
+                        <li>
+                            <Link href="/signin" className="px-6 py-2 bg-gradient-to-r from-teal-600 to-teal-400 hover:from-teal-500 hover:to-teal-300 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5">
+                                Connexion
                             </Link>
                         </li>
                     </ul>
@@ -170,9 +175,14 @@ export default function MarketingNav() {
                                 <Link
                                     href="/marketing#contact"
                                     onClick={(e) => scrollToSection(e, 'contact')}
-                                    className="block px-6 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-semibold text-center"
+                                    className="block px-6 py-2 bg-gradient-to-r from-slate-600 to-teal-600 text-white rounded-lg font-semibold text-center"
                                 >
                                     Contact
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/signin" className="px-6 py-2 bg-gradient-to-r from-teal-600 to-teal-400 hover:from-teal-500 hover:to-teal-300 text-white rounded-lg font-semibold text-center">
+                                    Connexion
                                 </Link>
                             </li>
                         </ul>
