@@ -49,7 +49,7 @@ export default function BroadcastPage() {
                     <CardHeader>
                         <CardTitle>Administration</CardTitle>
                         <CardDescription>
-                            Accédez au panneau d'administration
+                            Accédez au panneau d&rsquo;administration
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

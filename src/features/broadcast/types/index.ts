@@ -82,3 +82,13 @@ export interface VotingResult {
     presentation: string;
     id_jury_event: number;
 }
+
+export type ParticipantStreamStatus = 'idle' | 'requested' | 'streaming';
+
+export interface ParticipantSummary {
+    participantId: string;
+    displayName: string;
+    status: ParticipantStreamStatus;
+    currentScreenId: string | null;
+    lastRequestAt: number | null;
+}

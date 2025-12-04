@@ -71,7 +71,7 @@ export async function getDashboardStats() {
             totalEvents: eventsCount,
             activeUsers: activeUsersCount,
             totalVotes: 0,
-            broadcasts: 0,
+            broadcasts: 0
         };
     } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);

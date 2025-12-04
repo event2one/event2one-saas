@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import EventSessionSelector from '@/components/EventSessionSelector';
 import { UserConnectionToast } from '@/features/broadcast/components/UserConnectionToast';
 import { RankingSection } from '@/features/broadcast/components/RankingSection';
+import { ParticipantStreamsPanel } from '@/features/broadcast/components/ParticipantStreamsPanel';
 import { ConfEventProvider } from '@/features/broadcast/contexts/ConfEventContext';
 import { Play, Eraser, EyeOff, UserPlus, GripVertical, Search, Monitor, X } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -224,6 +225,7 @@ export default function AdminPage() {
     }>>([]);
 
     const socketRef = useRef<Socket | null>(null);
+    const [socketInstance, setSocketInstance] = useState<Socket | null>(null);
     const sensors = useSensors(useSensor(PointerSensor));
 
     // Fetch Initial Data
@@ -270,6 +272,7 @@ export default function AdminPage() {
             path: '/saas/socket.io'
         });
         const socket = socketRef.current;
+        setSocketInstance(socket);
         socket.emit('dire_bonjour', { my: 'Bonjour server, je suis admin' });
 
         socket.on('connect', () => {
@@ -303,6 +306,7 @@ export default function AdminPage() {
 
         return () => {
             socket.disconnect();
+            setSocketInstance(null);
         };
     }, [adminId]);
 
@@ -542,7 +546,7 @@ export default function AdminPage() {
             <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-                    <p>Chargement de l'interface admin...</p>
+                    <p>Chargement de l&rsquo;interface admin...</p>
                 </div>
             </div>
         );
@@ -565,6 +569,10 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-4">
                                     <div>
                                         <h1 className="text-lg font-bold text-white">Gestion des Intervenants</h1>
+
+                                <div className="container mx-auto px-4 py-6">
+                                    <ParticipantStreamsPanel idConfEvent={adminId} socket={socketInstance} />
+                                </div>
                                         <p className="text-[10px] text-neutral-400">Event {eventId} • Session {adminId}</p>
                                     </div>
                                     <div className="hidden md:flex items-center gap-2">

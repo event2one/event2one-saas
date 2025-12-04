@@ -59,6 +59,42 @@ app.prepare().then(() => {
         }
     });
 
+    const participants = new Map();
+    const screens = new Map();
+
+    const emitParticipantList = (idConfEvent) => {
+        if (!idConfEvent) return;
+        const room = `admin-event-${idConfEvent}`;
+        const list = Array.from(participants.values())
+            .filter((participant) => participant.idConfEvent === idConfEvent)
+            .map(({ participantId, displayName, status, currentScreenId, lastRequestAt }) => ({
+                participantId,
+                displayName,
+                status,
+                currentScreenId: currentScreenId || null,
+                lastRequestAt: lastRequestAt || null
+            }));
+        console.log(`[EMIT LIST] Sending ${list.length} participants to room ${room}:`, list.map(p => `${p.displayName}(${p.status})`));
+        io.to(room).emit('admin:participant-list', list);
+    };
+
+    const cleanupSocket = (socket) => {
+        if (socket?.data?.role === 'participant' && socket.data.participantId) {
+            const stored = participants.get(socket.data.participantId);
+            if (stored && stored.socketId === socket.id) {
+                participants.delete(socket.data.participantId);
+                emitParticipantList(socket.data.idConfEvent);
+            }
+        }
+
+        if (socket?.data?.role === 'screen' && socket.data.screenId) {
+            const stored = screens.get(socket.data.screenId);
+            if (stored && stored.socketId === socket.id) {
+                screens.delete(socket.data.screenId);
+            }
+        }
+    };
+
     io.on('connection', function (socket) {
         console.log('a user is connected');
 
@@ -75,6 +111,177 @@ app.prepare().then(() => {
             socket.join(room);
             console.log(`[ADMIN] Joined room: ${room} (ije: ${data.ije})`);
             socket.emit('admin:joined', { room });
+            emitParticipantList(data.ije);
+        });
+
+        socket.on('participant:join', function (payload = {}) {
+            const { participantId, displayName, idConfEvent } = payload;
+            console.log('[PARTICIPANT JOIN] Received:', { participantId, displayName, idConfEvent });
+            if (!participantId || !idConfEvent) {
+                console.warn('participant:join missing identifiers');
+                return;
+            }
+            socket.data.role = 'participant';
+            socket.data.participantId = participantId;
+            // Convert idConfEvent to number to ensure type consistency
+            const confEventId = typeof idConfEvent === 'string' ? parseInt(idConfEvent, 10) : idConfEvent;
+            socket.data.idConfEvent = confEventId;
+
+            participants.set(participantId, {
+                participantId,
+                displayName: displayName || 'Participant',
+                idConfEvent: confEventId,
+                socketId: socket.id,
+                status: 'idle',
+                currentScreenId: null,
+                lastRequestAt: null
+            });
+
+            socket.join(`event-${confEventId}`);
+            console.log(`[PARTICIPANT] ${participantId} joined conf event ${confEventId}, total participants: ${participants.size}`);
+            emitParticipantList(confEventId);
+        });
+
+        socket.on('participant:leave', function () {
+            cleanupSocket(socket);
+        });
+
+        socket.on('screen:join', function (payload = {}) {
+            const { screenId, idConfEvent } = payload;
+            console.log('[SCREEN JOIN] Received:', { screenId, idConfEvent });
+            if (!screenId) {
+                console.warn('screen:join missing screenId');
+                return;
+            }
+            socket.data.role = 'screen';
+            socket.data.screenId = screenId;
+            socket.data.idConfEvent = idConfEvent;
+            screens.set(screenId, {
+                screenId,
+                idConfEvent: idConfEvent || null,
+                socketId: socket.id
+            });
+            console.log(`[SCREEN] ${screenId} registered with socket ${socket.id}`);
+        });
+
+        socket.on('admin:assign-stream', function (payload = {}) {
+            const { participantId, screenId, idConfEvent } = payload;
+            console.log('[ADMIN ASSIGN] Received:', { participantId, screenId, idConfEvent });
+            if (!participantId || !screenId) {
+                console.warn('admin:assign-stream missing identifiers');
+                return;
+            }
+            const participant = participants.get(participantId);
+            const screen = screens.get(screenId);
+            console.log('[ADMIN ASSIGN] Participant found:', !!participant, 'Screen found:', !!screen);
+            if (!participant) {
+                console.warn(`Participant ${participantId} not registered. Available:`, Array.from(participants.keys()));
+                return;
+            }
+            if (!screen) {
+                console.warn(`Screen ${screenId} not registered. Available:`, Array.from(screens.keys()));
+                return;
+            }
+
+            participant.status = 'requested';
+            participant.currentScreenId = screenId;
+            participant.lastRequestAt = Date.now();
+            participants.set(participantId, participant);
+
+            console.log(`[ASSIGN] Participant ${participantId} -> Screen ${screenId}`);
+            emitParticipantList(idConfEvent || participant.idConfEvent);
+            io.to(screen.socketId).emit('screen:await-stream', { participantId });
+            io.to(participant.socketId).emit('participant:start-stream', {
+                screenId,
+                screenSocketId: screen.socketId
+            });
+        });
+
+        socket.on('admin:stop-stream', function (payload = {}) {
+            const { participantId, screenId, idConfEvent } = payload;
+            if (!participantId && !screenId) return;
+            const participant = participantId ? participants.get(participantId) : null;
+            const screen = screenId ? screens.get(screenId) : null;
+
+            if (participant) {
+                participant.status = 'idle';
+                participant.currentScreenId = null;
+                participants.set(participant.participantId, participant);
+                io.to(participant.socketId).emit('participant:stop-stream', { screenId });
+            }
+            if (screen) {
+                io.to(screen.socketId).emit('screen:stop-stream', { participantId });
+            }
+
+            emitParticipantList(idConfEvent || participant?.idConfEvent);
+        });
+
+        socket.on('participant:stop-stream', function (payload = {}) {
+            const participantId = socket.data?.participantId || payload.participantId;
+            const { screenId } = payload;
+            if (!participantId) return;
+            const participant = participants.get(participantId);
+            if (participant) {
+                participant.status = 'idle';
+                participant.currentScreenId = null;
+                participants.set(participantId, participant);
+            }
+            if (screenId) {
+                const screen = screens.get(screenId);
+                if (screen) {
+                    io.to(screen.socketId).emit('screen:stop-stream', { participantId });
+                }
+            }
+            emitParticipantList(participant?.idConfEvent || socket.data?.idConfEvent);
+        });
+
+        socket.on('webrtc:offer', function (payload = {}) {
+            const { participantId, screenId, sdp } = payload;
+            console.log('[WEBRTC OFFER] Received from participant:', participantId, 'to screen:', screenId);
+            if (!participantId || !screenId || !sdp) {
+                console.warn('[WEBRTC OFFER] Missing data:', { participantId, screenId, hasSdp: !!sdp });
+                return;
+            }
+            const screen = screens.get(screenId);
+            if (!screen) {
+                console.warn('[WEBRTC OFFER] Screen not found:', screenId, 'Available:', Array.from(screens.keys()));
+                return;
+            }
+            console.log('[WEBRTC OFFER] Routing to screen socket:', screen.socketId);
+            io.to(screen.socketId).emit('webrtc:offer', { participantId, sdp });
+        });
+
+        socket.on('webrtc:answer', function (payload = {}) {
+            const { participantId, screenId, sdp } = payload;
+            console.log('[WEBRTC ANSWER] Received from screen:', screenId, 'to participant:', participantId);
+            if (!participantId || !screenId || !sdp) {
+                console.warn('[WEBRTC ANSWER] Missing data:', { participantId, screenId, hasSdp: !!sdp });
+                return;
+            }
+            const participant = participants.get(participantId);
+            if (!participant) {
+                console.warn('[WEBRTC ANSWER] Participant not found:', participantId, 'Available:', Array.from(participants.keys()));
+                return;
+            }
+            participant.status = 'streaming';
+            participants.set(participantId, participant);
+            console.log('[WEBRTC ANSWER] Routing to participant socket:', participant.socketId);
+            io.to(participant.socketId).emit('webrtc:answer', { screenId, sdp });
+            emitParticipantList(participant.idConfEvent);
+        });
+
+        socket.on('webrtc:ice-candidate', function (payload = {}) {
+            const { target, participantId, screenId, candidate } = payload;
+            if (!candidate) return;
+            if (target === 'screen' && screenId) {
+                const screen = screens.get(screenId);
+                if (screen) io.to(screen.socketId).emit('webrtc:ice-candidate', { participantId, candidate });
+                return;
+            }
+            if (target === 'participant' && participantId) {
+                const participant = participants.get(participantId);
+                if (participant) io.to(participant.socketId).emit('webrtc:ice-candidate', { screenId, candidate });
+            }
         });
 
         // Voting user connected - notify admin
@@ -129,6 +336,9 @@ app.prepare().then(() => {
             socket.broadcast.emit('check_connexion', { screenId: data.screenId });
             io.sockets.in(room).emit('message', `Private messenger ${data.screenId} ${data.message} WTF!!!`);
             socket.broadcast.emit('message', 'weshalors les gens');
+        });
+        socket.on('disconnect', function () {
+            cleanupSocket(socket);
         });
     });
 
