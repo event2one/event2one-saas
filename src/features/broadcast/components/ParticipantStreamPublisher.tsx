@@ -37,23 +37,24 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
 
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const socketRef = useRef<Socket | null>(null);
-    const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+    // Map of peer connections: viewerId -> RTCPeerConnection
+    const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
 
     const canOperate = participantId && idConfEvent;
 
-    const resetPeerConnection = () => {
-        if (peerConnectionRef.current) {
-            peerConnectionRef.current.ontrack = null;
-            peerConnectionRef.current.onicecandidate = null;
-            peerConnectionRef.current.onconnectionstatechange = null;
-            peerConnectionRef.current.close();
-            peerConnectionRef.current = null;
-        }
+    const resetPeerConnections = () => {
+        peerConnectionsRef.current.forEach((peer) => {
+            peer.ontrack = null;
+            peer.onicecandidate = null;
+            peer.onconnectionstatechange = null;
+            peer.close();
+        });
+        peerConnectionsRef.current.clear();
     };
 
     const stopStreaming = () => {
         const previousScreen = pendingScreenId;
-        resetPeerConnection();
+        resetPeerConnections();
         setStatus('idle');
         setPendingScreenId(null);
         if (previousScreen) {
@@ -107,10 +108,15 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
         }
     };
 
-    const handleConnectionChange = (pc: RTCPeerConnection) => {
-        setMessage(pc.connectionState);
+    const handleConnectionChange = (viewerId: string, pc: RTCPeerConnection) => {
+        setMessage(`${viewerId.substring(0, 8)}: ${pc.connectionState}`);
         if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
-            stopStreaming();
+            // Remove this specific connection
+            peerConnectionsRef.current.delete(viewerId);
+            // If no more connections, stop streaming
+            if (peerConnectionsRef.current.size === 0) {
+                stopStreaming();
+            }
         }
     };
 
@@ -123,61 +129,46 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
             return;
         }
 
-        console.log('[PARTICIPANT] Local stream OK, creating peer connection');
-        resetPeerConnection();
-        const peer = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-        peerConnectionRef.current = peer;
-        localStream.getTracks().forEach((track) => {
-            console.log('[PARTICIPANT] Adding track:', track.kind, track.id);
-            peer.addTrack(track, localStream);
-        });
-        peer.onicecandidate = (event) => handleIceCandidate(screenId, event);
-        peer.onconnectionstatechange = () => handleConnectionChange(peer);
-
-        try {
-            console.log('[PARTICIPANT] Creating WebRTC offer...');
-            const offer = await peer.createOffer();
-            await peer.setLocalDescription(offer);
-            console.log('[PARTICIPANT] Sending offer to server');
-            socketRef.current.emit('webrtc:offer', {
-                participantId,
-                screenId,
-                sdp: offer,
-            });
-            setPendingScreenId(screenId);
-            setStatus('requested');
-            setMessage("Connexion vers la régie écran...");
-            console.log('[PARTICIPANT] Offer sent successfully');
-        } catch (error) {
-            console.error('[PARTICIPANT] Erreur lors de la création de l\'offre WebRTC:', error);
-            setMessage('Impossible de démarrer la diffusion.');
-        }
+        console.log('[PARTICIPANT] Local stream OK, ready to create connections for viewers');
+        setPendingScreenId(screenId);
+        setStatus('requested');
+        setMessage("En attente des viewers...");
     };
 
-    const handleAnswer = async (screenId: string, sdp: RTCSessionDescriptionInit) => {
-        console.log('[PARTICIPANT] Received WebRTC answer from screen:', screenId);
-        const peer = peerConnectionRef.current;
+    const handleAnswer = async (viewerId: string, sdp: RTCSessionDescriptionInit) => {
+        console.log('[PARTICIPANT] Received WebRTC answer from viewer:', viewerId);
+
+        // Get the existing peer connection for this viewer
+        const peer = peerConnectionsRef.current.get(viewerId);
         if (!peer) {
-            console.error('[PARTICIPANT] No peer connection for answer');
+            console.error('[PARTICIPANT] No peer connection found for viewer:', viewerId);
             return;
         }
+
         try {
-            console.log('[PARTICIPANT] Setting remote description (answer)');
+            // Set remote description (the answer from viewer)
+            console.log('[PARTICIPANT] Setting remote description (answer) for viewer:', viewerId);
             await peer.setRemoteDescription(new RTCSessionDescription(sdp));
+
             setStatus('streaming');
-            setMessage(`Diffusion vers écran ${screenId}`);
-            console.log('[PARTICIPANT] Answer processed, connection established');
+            setMessage(`Diffusion vers ${peerConnectionsRef.current.size} viewer(s)`);
+            console.log('[PARTICIPANT] Answer processed for viewer:', viewerId);
         } catch (error) {
             console.error('[PARTICIPANT] Erreur lors de l\'application de la réponse WebRTC:', error);
             setMessage('La réponse WebRTC est invalide.');
         }
     };
 
-    const addRemoteCandidate = async (candidate: RTCIceCandidateInit) => {
-        console.log('[PARTICIPANT] Adding remote ICE candidate');
+    const addRemoteCandidate = async (viewerId: string, candidate: RTCIceCandidateInit) => {
+        console.log('[PARTICIPANT] Adding remote ICE candidate for viewer:', viewerId);
+        const peer = peerConnectionsRef.current.get(viewerId);
+        if (!peer) {
+            console.warn('[PARTICIPANT] No peer connection found for viewer:', viewerId);
+            return;
+        }
         try {
-            await peerConnectionRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
-            console.log('[PARTICIPANT] ICE candidate added successfully');
+            await peer.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log('[PARTICIPANT] ICE candidate added successfully for viewer:', viewerId);
         } catch (error) {
             console.error('[PARTICIPANT] Erreur lors de l\'ajout du candidat ICE:', error);
         }
@@ -220,18 +211,80 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
             stopStreaming();
         });
 
-        socket.on('webrtc:answer', ({ screenId, sdp }: { screenId: string; sdp: RTCSessionDescriptionInit }) => {
-            handleAnswer(screenId, sdp);
+        socket.on('webrtc:answer', ({ viewerId, sdp }: { viewerId: string; sdp: RTCSessionDescriptionInit }) => {
+            handleAnswer(viewerId, sdp);
         });
 
-        socket.on('webrtc:ice-candidate', ({ candidate }: { candidate: RTCIceCandidateInit }) => {
-            if (candidate) addRemoteCandidate(candidate);
+        socket.on('webrtc:ice-candidate', ({ viewerId, candidate }: { viewerId: string; candidate: RTCIceCandidateInit }) => {
+            if (candidate && viewerId) addRemoteCandidate(viewerId, candidate);
+        });
+
+        // When a viewer is ready to receive stream
+        socket.on('participant:viewer-ready', async ({ viewerId, screenId }: { viewerId: string; screenId: string }) => {
+            console.log('[PARTICIPANT] Viewer ready:', viewerId, 'for screen:', screenId);
+
+            // Ensure we have a local stream before proceeding
+            let localStream = mediaStream;
+            if (!localStream) {
+                console.log('[PARTICIPANT] Stream not ready yet, requesting...');
+                localStream = await ensureLocalStream();
+            }
+
+            if (!localStream || !socketRef.current) {
+                console.error('[PARTICIPANT] Failed to get local stream for viewer');
+                return;
+            }
+
+            try {
+                console.log('[PARTICIPANT] Creating peer connection for viewer:', viewerId);
+                const peer = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+                // Add local tracks
+                localStream.getTracks().forEach((track) => {
+                    console.log('[PARTICIPANT] Adding track to viewer connection:', track.kind);
+                    peer.addTrack(track, localStream as MediaStream);
+                });
+
+                // Set up event handlers
+                peer.onicecandidate = (event) => {
+                    if (event.candidate && socketRef.current) {
+                        socketRef.current.emit('webrtc:ice-candidate', {
+                            target: 'screen',
+                            participantId,
+                            viewerId,
+                            candidate: event.candidate,
+                        });
+                    }
+                };
+                peer.onconnectionstatechange = () => handleConnectionChange(viewerId, peer);
+
+                // Create and send offer to this specific viewer
+                console.log('[PARTICIPANT] Creating offer for viewer:', viewerId);
+                const offer = await peer.createOffer();
+                await peer.setLocalDescription(offer);
+
+                console.log('[PARTICIPANT] Sending offer to viewer:', viewerId);
+                socketRef.current.emit('webrtc:offer', {
+                    participantId,
+                    viewerId,
+                    sdp: offer,
+                });
+
+                // Store the peer connection
+                peerConnectionsRef.current.set(viewerId, peer);
+
+                setStatus('streaming');
+                setMessage(`Diffusion vers ${peerConnectionsRef.current.size} viewer(s)`);
+                console.log('[PARTICIPANT] Offer sent to viewer:', viewerId);
+            } catch (error) {
+                console.error('[PARTICIPANT] Error creating offer for viewer:', error);
+            }
         });
 
         return () => {
             socket.emit('participant:leave');
             socket.disconnect();
-            resetPeerConnection();
+            resetPeerConnections();
             mediaStream?.getTracks().forEach((track) => track.stop());
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps

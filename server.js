@@ -156,12 +156,20 @@ app.prepare().then(() => {
             socket.data.role = 'screen';
             socket.data.screenId = screenId;
             socket.data.idConfEvent = idConfEvent;
+
+            // Join rooms for broadcasting
+            const legacyRoom = `room${screenId}`;
+            const screenRoom = `screen-${screenId}`;
+            socket.join(legacyRoom);
+            socket.join(screenRoom);
+            console.log(`[SCREEN] Socket ${socket.id} joined rooms: ${legacyRoom}, ${screenRoom}`);
+
+            // Keep track of at least one socket for validation (optional but good for admin feedback)
             screens.set(screenId, {
                 screenId,
                 idConfEvent: idConfEvent || null,
                 socketId: socket.id
             });
-            console.log(`[SCREEN] ${screenId} registered with socket ${socket.id}`);
         });
 
         socket.on('admin:assign-stream', function (payload = {}) {
@@ -172,28 +180,34 @@ app.prepare().then(() => {
                 return;
             }
             const participant = participants.get(participantId);
+            // We don't strictly need to check screens map if we trust the room exists, 
+            // but checking if at least one screen is registered is good practice.
             const screen = screens.get(screenId);
+
             console.log('[ADMIN ASSIGN] Participant found:', !!participant, 'Screen found:', !!screen);
             if (!participant) {
                 console.warn(`Participant ${participantId} not registered. Available:`, Array.from(participants.keys()));
                 return;
             }
-            if (!screen) {
-                console.warn(`Screen ${screenId} not registered. Available:`, Array.from(screens.keys()));
-                return;
-            }
+
+            // Even if 'screen' is just the last one, we broadcast to the room.
+            // If no screen is in the map, maybe no one is connected, but we can still try emitting to room.
 
             participant.status = 'requested';
             participant.currentScreenId = screenId;
             participant.lastRequestAt = Date.now();
             participants.set(participantId, participant);
 
-            console.log(`[ASSIGN] Participant ${participantId} -> Screen ${screenId}`);
+            console.log(`[ASSIGN] Participant ${participantId} -> Screen ${screenId} (Room: screen-${screenId})`);
             emitParticipantList(idConfEvent || participant.idConfEvent);
-            io.to(screen.socketId).emit('screen:await-stream', { participantId });
+
+            // Broadcast to ALL screens in the room
+            io.to(`screen-${screenId}`).emit('screen:await-stream', { participantId });
+
+            // Notify participant
             io.to(participant.socketId).emit('participant:start-stream', {
                 screenId,
-                screenSocketId: screen.socketId
+                screenSocketId: null // No longer relevant as we have multiple screens
             });
         });
 
@@ -235,27 +249,44 @@ app.prepare().then(() => {
             emitParticipantList(participant?.idConfEvent || socket.data?.idConfEvent);
         });
 
+        // Screen viewer requests stream from participant
+        socket.on('screen:request-stream', function (payload = {}) {
+            const { participantId, viewerId, screenId } = payload;
+            console.log('[SCREEN REQUEST] Viewer', viewerId, 'requesting stream from participant:', participantId);
+            if (!participantId || !viewerId) {
+                console.warn('screen:request-stream missing identifiers');
+                return;
+            }
+            const participant = participants.get(participantId);
+            if (!participant) {
+                console.warn(`Participant ${participantId} not found for screen request`);
+                return;
+            }
+            // Notify participant that this specific viewer wants a stream
+            console.log('[SCREEN REQUEST] Routing to participant:', participant.socketId);
+            io.to(participant.socketId).emit('participant:viewer-ready', {
+                viewerId,
+                screenId
+            });
+        });
+
         socket.on('webrtc:offer', function (payload = {}) {
-            const { participantId, screenId, sdp } = payload;
-            console.log('[WEBRTC OFFER] Received from participant:', participantId, 'to screen:', screenId);
-            if (!participantId || !screenId || !sdp) {
-                console.warn('[WEBRTC OFFER] Missing data:', { participantId, screenId, hasSdp: !!sdp });
+            const { participantId, viewerId, sdp } = payload;
+            console.log('[WEBRTC OFFER] Received from participant:', participantId, 'for viewer:', viewerId);
+            if (!participantId || !viewerId || !sdp) {
+                console.warn('[WEBRTC OFFER] Missing data:', { participantId, viewerId, hasSdp: !!sdp });
                 return;
             }
-            const screen = screens.get(screenId);
-            if (!screen) {
-                console.warn('[WEBRTC OFFER] Screen not found:', screenId, 'Available:', Array.from(screens.keys()));
-                return;
-            }
-            console.log('[WEBRTC OFFER] Routing to screen socket:', screen.socketId);
-            io.to(screen.socketId).emit('webrtc:offer', { participantId, sdp });
+            // Send offer to specific viewer
+            console.log('[WEBRTC OFFER] Routing to viewer socket:', viewerId);
+            io.to(viewerId).emit('webrtc:offer', { participantId, sdp });
         });
 
         socket.on('webrtc:answer', function (payload = {}) {
-            const { participantId, screenId, sdp } = payload;
-            console.log('[WEBRTC ANSWER] Received from screen:', screenId, 'to participant:', participantId);
-            if (!participantId || !screenId || !sdp) {
-                console.warn('[WEBRTC ANSWER] Missing data:', { participantId, screenId, hasSdp: !!sdp });
+            const { participantId, viewerId, sdp } = payload;
+            console.log('[WEBRTC ANSWER] Received from viewer:', viewerId, 'to participant:', participantId);
+            if (!participantId || !viewerId || !sdp) {
+                console.warn('[WEBRTC ANSWER] Missing data:', { participantId, viewerId, hasSdp: !!sdp });
                 return;
             }
             const participant = participants.get(participantId);
@@ -266,21 +297,21 @@ app.prepare().then(() => {
             participant.status = 'streaming';
             participants.set(participantId, participant);
             console.log('[WEBRTC ANSWER] Routing to participant socket:', participant.socketId);
-            io.to(participant.socketId).emit('webrtc:answer', { screenId, sdp });
+            io.to(participant.socketId).emit('webrtc:answer', { viewerId, sdp });
             emitParticipantList(participant.idConfEvent);
         });
 
         socket.on('webrtc:ice-candidate', function (payload = {}) {
-            const { target, participantId, screenId, candidate } = payload;
+            const { target, participantId, viewerId, candidate } = payload;
             if (!candidate) return;
-            if (target === 'screen' && screenId) {
-                const screen = screens.get(screenId);
-                if (screen) io.to(screen.socketId).emit('webrtc:ice-candidate', { participantId, candidate });
+            if (target === 'screen' && viewerId) {
+                // Send to specific viewer
+                io.to(viewerId).emit('webrtc:ice-candidate', { participantId, candidate });
                 return;
             }
             if (target === 'participant' && participantId) {
                 const participant = participants.get(participantId);
-                if (participant) io.to(participant.socketId).emit('webrtc:ice-candidate', { screenId, candidate });
+                if (participant) io.to(participant.socketId).emit('webrtc:ice-candidate', { viewerId, candidate });
             }
         });
 

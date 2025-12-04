@@ -100,7 +100,7 @@ export default function ScreenPage() {
                 socketRef.current.emit('webrtc:ice-candidate', {
                     target: 'participant',
                     participantId,
-                    screenId,
+                    viewerId: socketRef.current.id, // Add viewerId
                     candidate: event.candidate,
                 });
             }
@@ -149,9 +149,18 @@ export default function ScreenPage() {
         socket.on('updateMediaContainer', handleIframeUpdate);
 
         socket.on('screen:await-stream', ({ participantId }: { participantId: string }) => {
+            console.log('[SCREEN] Received await-stream for participant:', participantId);
             setActiveParticipant(participantId);
             setStatus('awaiting');
             cleanupPeer();
+
+            // Request stream from participant with our viewerId
+            console.log('[SCREEN] Requesting stream with viewerId:', socket.id);
+            socket.emit('screen:request-stream', {
+                participantId,
+                viewerId: socket.id,
+                screenId
+            });
         });
 
         socket.on('screen:stop-stream', () => {
@@ -180,7 +189,11 @@ export default function ScreenPage() {
                     console.error('[SCREEN] Socket not connected, cannot send answer');
                     return;
                 }
-                socket.emit('webrtc:answer', { participantId, screenId, sdp: answer });
+                socket.emit('webrtc:answer', {
+                    participantId,
+                    viewerId: socket.id, // Add viewerId
+                    sdp: answer
+                });
                 console.log('[SCREEN] Answer emitted successfully');
             } catch (error) {
                 console.error('[SCREEN] Erreur lors du traitement de l\'offre WebRTC:', error);
