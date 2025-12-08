@@ -395,7 +395,7 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
                     <div>
                         <p className="text-sm text-neutral-400 uppercase tracking-wide">Participant</p>
                         <h2 className="text-xl font-semibold text-white">{displayName || participantId}</h2>
-                        <p className="text-xs text-neutral-500">Session #{idConfEvent}</p>
+                        <p className="text-xs text-neutral-500">Session #{idConfEvent} (v1.1)</p>
                     </div>
                     <Badge className={`${statusColor} text-neutral-900`}>{statusLabel[status]}</Badge>
                 </div>
