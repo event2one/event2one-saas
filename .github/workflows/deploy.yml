@@ -35,5 +35,5 @@ jobs:
           # Build Next.js app
           npm run build
 
-          # Reload PM2 process
-          pm2 reload ecosystem.config.js
+          # Restart PM2 process (restart is safer than reload for Next.js builds)
+          pm2 restart ecosystem.config.js
