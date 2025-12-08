@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { AlertCircle, Camera, CameraOff, Mic, MicOff, RefreshCcw } from 'lucide-react';
+import { AlertCircle, Camera, CameraOff, Mic, MicOff, Monitor, MonitorOff, RefreshCcw } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
     const [pendingScreenId, setPendingScreenId] = useState<string | null>(null);
     const [isAudioMuted, setIsAudioMuted] = useState(false);
     const [isVideoMuted, setIsVideoMuted] = useState(false);
+    const [isScreenSharing, setIsScreenSharing] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const socketRef = useRef<Socket | null>(null);
@@ -65,8 +66,8 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
         }
     };
 
-    const requestLocalMedia = async (): Promise<MediaStream | null> => {
-        if (mediaStream || !canOperate) return mediaStream || null;
+    const requestLocalMedia = async (force = false): Promise<MediaStream | null> => {
+        if (!force && (mediaStream || !canOperate)) return mediaStream || null;
         if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
             setMediaError('API média non disponible dans ce navigateur.');
             return null;
@@ -95,6 +96,64 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
     const ensureLocalStream = async (): Promise<MediaStream | null> => {
         if (mediaStream) return mediaStream;
         return await requestLocalMedia();
+    };
+
+    const startScreenShare = async () => {
+        try {
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            const screenVideoTrack = screenStream.getVideoTracks()[0];
+
+            if (!screenVideoTrack) return;
+
+            // Keep existing audio track if available
+            const audioTrack = mediaStream?.getAudioTracks()[0];
+            const newStream = new MediaStream([screenVideoTrack, ...(audioTrack ? [audioTrack] : [])]);
+
+            setMediaStream(newStream);
+            setIsScreenSharing(true);
+            setIsVideoMuted(false); // Screen share is always "video on" effectively
+
+            // Replace video track in all active connections
+            peerConnectionsRef.current.forEach((peer) => {
+                const senders = peer.getSenders();
+                const videoSender = senders.find((s) => s.track?.kind === 'video');
+                if (videoSender) {
+                    videoSender.replaceTrack(screenVideoTrack);
+                }
+            });
+
+            // Handle system "Stop sharing" button
+            screenVideoTrack.onended = () => {
+                stopScreenShare();
+            };
+        } catch (error) {
+            console.error('Erreur lors du partage d\'écran:', error);
+            // Likely user cancelled
+        }
+    };
+
+    const stopScreenShare = async () => {
+        // Stop screen track if it's still running
+        const currentVideoTrack = mediaStream?.getVideoTracks()[0];
+        if (currentVideoTrack && currentVideoTrack.label.includes('screen')) { // Rough check or just stop it
+            currentVideoTrack.stop();
+        }
+
+        setIsScreenSharing(false);
+
+        // Revert to camera
+        const cameraStream = await requestLocalMedia(true);
+        if (cameraStream) {
+            const cameraVideoTrack = cameraStream.getVideoTracks()[0];
+            // Replace video track in all active connections
+            peerConnectionsRef.current.forEach((peer) => {
+                const senders = peer.getSenders();
+                const videoSender = senders.find((s) => s.track?.kind === 'video');
+                if (videoSender && cameraVideoTrack) {
+                    videoSender.replaceTrack(cameraVideoTrack);
+                }
+            });
+        }
     };
 
     const handleIceCandidate = (screenId: string, event: RTCPeerConnectionIceEvent) => {
@@ -353,7 +412,7 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
                         <div className="absolute inset-0 backdrop-blur flex flex-col items-center justify-center text-center p-4 text-red-200 bg-black/60">
                             <AlertCircle className="w-12 h-12 mb-2" />
                             <p className="font-medium">{mediaError}</p>
-                            <Button variant="outline" className="mt-4" onClick={requestLocalMedia}>
+                            <Button variant="outline" className="mt-4" onClick={() => requestLocalMedia(true)}>
                                 Réessayer
                             </Button>
                         </div>
@@ -381,9 +440,16 @@ export function ParticipantStreamPublisher({ participantId, idConfEvent, display
                         {isVideoMuted ? <CameraOff className="w-4 h-4 mr-2" /> : <Camera className="w-4 h-4 mr-2" />}
                         {isVideoMuted ? 'Caméra coupée' : 'Caméra active'}
                     </Button>
-                    <Button variant="outline" onClick={requestLocalMedia}>
+                    <Button variant="outline" onClick={() => requestLocalMedia()} disabled={isScreenSharing}>
                         <RefreshCcw className="w-4 h-4 mr-2" />
                         Réinitialiser la caméra
+                    </Button>
+                    <Button
+                        variant={isScreenSharing ? "destructive" : "secondary"}
+                        onClick={isScreenSharing ? stopScreenShare : startScreenShare}
+                    >
+                        {isScreenSharing ? <MonitorOff className="w-4 h-4 mr-2" /> : <Monitor className="w-4 h-4 mr-2" />}
+                        {isScreenSharing ? 'Arrêter le partage' : 'Partager l\'écran'}
                     </Button>
                     {status !== 'idle' && (
                         <Button variant="destructive" onClick={stopStreaming}>
