@@ -5,7 +5,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: geomanist-book, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -118,6 +118,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: geomanist-book, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   }
 }
 
@@ -136,6 +137,138 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.8s ease-out forwards;
+}
+
+/* Liquid Glass Effects */
+@keyframes glass-shimmer {
+  0% { 
+    background-position: -200% center; 
+  }
+  100% { 
+    background-position: 200% center; 
+  }
+}
+
+.glass-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 40%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: glass-shimmer 3s ease-in-out infinite;
+}
+
+/* Gradient Radial Utility */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-t {
+  background: radial-gradient(ellipse at top, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-b {
+  background: radial-gradient(ellipse at bottom, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-l {
+  background: radial-gradient(ellipse at left, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-r {
+  background: radial-gradient(ellipse at right, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-tl {
+  background: radial-gradient(ellipse at top left, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-tr {
+  background: radial-gradient(ellipse at top right, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-bl {
+  background: radial-gradient(ellipse at bottom left, var(--tw-gradient-stops));
+}
+
+.bg-gradient-radial-at-br {
+  background: radial-gradient(ellipse at bottom right, var(--tw-gradient-stops));
+}
+
+/* Advanced Backdrop Blur Effects */
+.backdrop-blur-glass {
+  backdrop-filter: blur(10px) saturate(120%) brightness(110%);
+}
+
+.backdrop-blur-frost {
+  backdrop-filter: blur(20px) saturate(180%) brightness(120%);
+}
+
+/* Mouse Spotlight Effect */
+.spotlight-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.spotlight-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(59, 130, 246, 0.05) 30%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.spotlight-container:hover::before {
+  opacity: 1;
+}
+
+/* Glow Cards */
+.glow-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glow-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(147, 51, 234, 0.05) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glow-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 40px rgba(59, 130, 246, 0.1),
+    0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+.glow-card:hover::before {
+  opacity: 1;
 }
 
 /* Smooth scroll behavior */

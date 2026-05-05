@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # On remplace le service "mysql" par "mariadb"
   mariadb:
-    image: mariadb:10.6  # <-- Version alignée sur votre PROD
+    image: mariadb:10.6 # <-- Version alignée sur votre PROD
     container_name: mon_saas_db
     restart: always
     environment:
