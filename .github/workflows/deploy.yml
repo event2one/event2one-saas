@@ -26,8 +26,9 @@ jobs:
           # Navigate to project directory
           cd /var/www/e2o/event2one-saas
 
-          # Pull latest changes
-          git pull origin master
+          # Force sync with remote (discards any local server-side modifications)
+          git fetch origin master
+          git reset --hard origin/master
 
           # Install dependencies
           npm install --legacy-peer-deps
