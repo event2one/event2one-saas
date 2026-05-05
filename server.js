@@ -7,7 +7,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
+const hostname = '0.0.0.0';
 const port = process.env.PORT || 3002;
 
 // Initialize Next.js
