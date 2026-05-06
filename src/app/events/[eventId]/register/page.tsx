@@ -305,8 +305,12 @@ export default function RegisterPage() {
                     </p>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {FIELDS.map(({ key, label, required, type, placeholder, full }) => (
-                                <div key={key} className={'full' in { full } && full ? 'sm:col-span-2' : ''}>
+                            {FIELDS.map((field) => {
+                                const { key, label, required, type } = field
+                                const placeholder = 'placeholder' in field ? field.placeholder : undefined
+                                const full = 'full' in field ? (field as { full?: boolean }).full : false
+                                return (
+                                <div key={key} className={full ? 'sm:col-span-2' : ''}>
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
                                         {label}
                                         {required && <span className="text-destructive">*</span>}
@@ -325,7 +329,8 @@ export default function RegisterPage() {
                                         className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                                     />
                                 </div>
-                            ))}
+                                )
+                            })}
                         </div>
 
                         {status === 'error' && (
