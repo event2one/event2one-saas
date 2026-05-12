@@ -1,16 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, XCircle, RefreshCw, User, Settings, MapPin, Mail, Hash } from 'lucide-react'
+import { CheckCircle, XCircle, RefreshCw, User, Settings, MapPin, Mail, Hash, WifiOff, CloudOff } from 'lucide-react'
 
 const API_URL = 'https://www.mlg-consulting.com/smart_territory/form/api.php'
 const CHECKIN_API_URL = 'https://www.mlg-consulting.com/smart_territory/form/checkin_api.php'
 const DIR_IMG = '//www.mlg-consulting.com/manager_cc/contacts/img_uploaded/'
 const STORAGE_KEY = 'go_identifye_config'
+const OFFLINE_QUEUE_KEY = 'checkin_offline_queue'
+const CONTACT_CACHE_KEY = 'checkin_contact_cache'
 
 type Phase = 'config' | 'scanning' | 'success' | 'error'
-type SaveStatus = 'pending' | 'saved' | 'failed'
+type SaveStatus = 'pending' | 'saved' | 'failed' | 'queued'
 
 type Config = {
     scan_identifier: string
@@ -24,6 +26,22 @@ type Contact = {
     nom: string
     societe?: string
     photo?: string
+}
+
+type CheckinPayload = {
+    id_event: string
+    id_conferencier: string
+    scan_type: 'entree'
+    scan_identifier: string
+    scanner_email: string
+    scan_point: string
+}
+
+type QueuedCheckin = {
+    id: string
+    timestamp: number
+    payload: CheckinPayload
+    retries: number
 }
 
 const emptyConfig: Config = { scan_identifier: '', scanner_email: '', scan_point: '' }
@@ -55,6 +73,47 @@ function loadSavedConfig(): Config | null {
     return null
 }
 
+// --- Offline queue ---
+function loadQueue(): QueuedCheckin[] {
+    try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]') } catch { return [] }
+}
+function saveQueue(q: QueuedCheckin[]) {
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q))
+}
+function enqueueCheckin(payload: CheckinPayload): void {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const q = loadQueue()
+    q.push({ id, timestamp: Date.now(), payload, retries: 0 })
+    saveQueue(q)
+}
+function dequeueCheckin(id: string) {
+    saveQueue(loadQueue().filter(i => i.id !== id))
+}
+
+// --- Contact cache ---
+function getCachedContact(id: string): Contact | null {
+    try {
+        const cache: Record<string, Contact> = JSON.parse(localStorage.getItem(CONTACT_CACHE_KEY) || '{}')
+        return cache[id] ?? null
+    } catch { return null }
+}
+function cacheContact(contact: Contact) {
+    try {
+        const cache: Record<string, Contact> = JSON.parse(localStorage.getItem(CONTACT_CACHE_KEY) || '{}')
+        cache[contact.id_contact] = contact
+        localStorage.setItem(CONTACT_CACHE_KEY, JSON.stringify(cache))
+    } catch { }
+}
+
+async function postCheckin(payload: CheckinPayload): Promise<{ success: boolean; error?: string }> {
+    const r = await fetch(`${CHECKIN_API_URL}?action=createCheckin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    })
+    return JSON.parse(await r.text())
+}
+
 export default function QrCheckinScanner() {
     const { eventId } = useParams<{ eventId: string }>()
     const [phase, setPhase] = useState<Phase>('config')
@@ -63,10 +122,53 @@ export default function QrCheckinScanner() {
     const [contact, setContact] = useState<Contact | null>(null)
     const [errorMsg, setErrorMsg] = useState('')
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('pending')
+    const [isOnline, setIsOnline] = useState(true)
+    const [pendingCount, setPendingCount] = useState(0)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const qrRef = useRef<any>(null)
     const cooldownRef = useRef(false)
     const configRef = useRef(config)
+
+    const flushQueue = useCallback(async () => {
+        const q = loadQueue()
+        if (q.length === 0) return
+        for (const item of q) {
+            try {
+                const result = await postCheckin(item.payload)
+                if (result.success) dequeueCheckin(item.id)
+                else break // server rejection — stop (not a connectivity issue)
+            } catch {
+                break // still offline — stop trying
+            }
+        }
+        setPendingCount(loadQueue().length)
+    }, [])
+
+    // Network status + auto-flush on reconnect
+    useEffect(() => {
+        setIsOnline(navigator.onLine)
+        setPendingCount(loadQueue().length)
+
+        const handleOnline = () => { setIsOnline(true); flushQueue() }
+        const handleOffline = () => setIsOnline(false)
+
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+
+        if (navigator.onLine) flushQueue()
+
+        return () => {
+            window.removeEventListener('online', handleOnline)
+            window.removeEventListener('offline', handleOffline)
+        }
+    }, [flushQueue])
+
+    // Periodic retry every 60s while there are pending items
+    useEffect(() => {
+        if (pendingCount === 0) return
+        const interval = setInterval(flushQueue, 60_000)
+        return () => clearInterval(interval)
+    }, [pendingCount, flushQueue])
 
     // Load saved config on mount (client-side only)
     useEffect(() => {
@@ -121,33 +223,40 @@ export default function QrCheckinScanner() {
                     qr!.stop().catch(() => { })
                     qrRef.current = null
 
+                    const checkinPayload: CheckinPayload = {
+                        id_event: resolvedEvent,
+                        id_conferencier: payload.id_conferencier,
+                        scan_type: 'entree',
+                        scan_identifier: configRef.current.scan_identifier,
+                        scanner_email: configRef.current.scanner_email,
+                        scan_point: configRef.current.scan_point,
+                    }
+
                     setScanData({ id_event: resolvedEvent, id_conferencier: payload.id_conferencier })
                     setContact(null)
                     setSaveStatus('pending')
                     setPhase('success')
 
+                    // Fetch contact — fall back to local cache if offline
                     fetch(`${API_URL}?action=getContact&id_contact=${payload.id_conferencier}`)
-                        .then(r => r.json()).then(c => setContact(c)).catch(() => { })
-
-                    fetch(`${CHECKIN_API_URL}?action=createCheckin`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id_event: resolvedEvent,
-                            id_conferencier: payload.id_conferencier,
-                            scan_type: 'entree',
-                            scan_identifier: configRef.current.scan_identifier,
-                            scanner_email: configRef.current.scanner_email,
-                            scan_point: configRef.current.scan_point,
+                        .then(r => r.json())
+                        .then(c => { cacheContact(c); setContact(c) })
+                        .catch(() => {
+                            const cached = getCachedContact(payload.id_conferencier!)
+                            if (cached) setContact(cached)
                         })
-                    })
-                        .then(r => r.text())
-                        .then(text => {
-                            const result = JSON.parse(text)
+
+                    // Post checkin — queue locally on network failure
+                    postCheckin(checkinPayload)
+                        .then(result => {
                             setSaveStatus(result.success ? 'saved' : 'failed')
                             if (!result.success) setErrorMsg(result.error || 'Erreur serveur')
                         })
-                        .catch(e => { setSaveStatus('failed'); setErrorMsg(e.message) })
+                        .catch(() => {
+                            enqueueCheckin(checkinPayload)
+                            setPendingCount(loadQueue().length)
+                            setSaveStatus('queued')
+                        })
                 },
                 () => { }
             ).catch((err: unknown) => {
@@ -192,7 +301,8 @@ export default function QrCheckinScanner() {
     const saveLabel: Record<SaveStatus, { text: string; cls: string }> = {
         pending: { text: 'Enregistrement…', cls: 'text-yellow-400' },
         saved: { text: 'Sauvegardé ✓', cls: 'text-green-400' },
-        failed: { text: 'Erreur save', cls: 'text-red-400' },
+        failed: { text: 'Erreur serveur', cls: 'text-red-400' },
+        queued: { text: 'Hors ligne — sync en attente', cls: 'text-orange-400' },
     }
 
     return (
@@ -225,13 +335,31 @@ export default function QrCheckinScanner() {
                 </div>
             )}
 
+            {/* Settings + network badges */}
             {phase === 'scanning' && (
-                <button
-                    onClick={openConfig}
-                    className="fixed top-4 right-4 z-20 p-2 bg-black/50 backdrop-blur-sm rounded-xl text-white/70 hover:text-white"
-                >
-                    <Settings size={20} />
-                </button>
+                <div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
+                    <button
+                        onClick={openConfig}
+                        className="p-2 bg-black/50 backdrop-blur-sm rounded-xl text-white/70 hover:text-white"
+                    >
+                        <Settings size={20} />
+                    </button>
+                    {!isOnline && (
+                        <div className="flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm rounded-xl px-2.5 py-1.5 text-white text-xs font-medium">
+                            <WifiOff size={13} />
+                            <span>Hors ligne</span>
+                            {pendingCount > 0 && (
+                                <span className="bg-white/25 rounded-full px-1.5 py-0.5 text-[10px] leading-none">{pendingCount}</span>
+                            )}
+                        </div>
+                    )}
+                    {isOnline && pendingCount > 0 && (
+                        <div className="flex items-center gap-1.5 bg-blue-500/90 backdrop-blur-sm rounded-xl px-2.5 py-1.5 text-white text-xs font-medium">
+                            <CloudOff size={13} />
+                            <span>Sync {pendingCount}…</span>
+                        </div>
+                    )}
+                </div>
             )}
 
             {/* Config */}
@@ -241,6 +369,12 @@ export default function QrCheckinScanner() {
                     <p className="text-neutral-400 text-sm mb-8 text-center">
                         Ces informations sont sauvegardées sur cet appareil.
                     </p>
+                    {pendingCount > 0 && (
+                        <div className="mb-6 w-full max-w-sm flex items-center gap-2 bg-orange-500/15 border border-orange-500/30 rounded-xl px-4 py-3 text-sm text-orange-300">
+                            <CloudOff size={16} className="shrink-0" />
+                            <span>{pendingCount} checkin{pendingCount > 1 ? 's' : ''} en attente de synchronisation</span>
+                        </div>
+                    )}
                     <form onSubmit={startScan} className="w-full max-w-sm flex flex-col gap-4">
                         <label className="flex flex-col gap-1">
                             <span className="text-xs text-neutral-400 flex items-center gap-1"><Hash size={12} /> Identifiant du scan</span>
@@ -295,6 +429,11 @@ export default function QrCheckinScanner() {
                     <span className={`text-sm font-medium px-3 py-1 rounded-full bg-neutral-800 ${saveLabel[saveStatus].cls}`}>
                         {saveLabel[saveStatus].text}
                     </span>
+                    {saveStatus === 'queued' && (
+                        <p className="text-xs text-orange-300/70 text-center max-w-xs">
+                            Enregistré localement. Sera envoyé automatiquement au retour du réseau.
+                        </p>
+                    )}
                     <div className="text-xs text-neutral-500 text-center space-y-0.5">
                         <p className="flex items-center justify-center gap-1"><MapPin size={10} /> {config.scan_point}</p>
                         <p className="flex items-center justify-center gap-1"><Hash size={10} /> {config.scan_identifier}</p>

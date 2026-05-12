@@ -47,6 +47,50 @@ Actions disponibles (non exhaustif) : `updateContact`, `updatePresta`, `getPrest
 
 Recherche un participant (partenaire) par nom/prénom via `getPartenaires`, génère un QR code via `api.qrserver.com` encodant `{ id_event, id_conferencier }`. Téléchargement PNG possible.
 
+### Générateur de e-badge A4 pliable en 4
+
+**Route** : `/badge/[eventId]`  
+**Fichier** : `src/app/badge/[eventId]/page.tsx`
+
+Génère un badge PDF A4 pliable en 4 pour insertion dans une **pochette porte-badge format A6** (105mm × 148.5mm).
+
+#### Disposition des 4 panneaux sur l'A4
+
+```
+┌──────────────┬──────────────┐
+│  TL          │  TR ← FACE  │  148.5mm
+│  (programme) │  VISIBLE     │
+├──────────────┼──────────────┤
+│  BL (↻180°)  │  BR (↻180°) │  148.5mm
+│  (instruct.) │  (vCard QR)  │
+└──────────────┴──────────────┘
+     105mm          105mm
+```
+
+Pliage : rabattre le bas sur le haut → plier la droite derrière la gauche → **TR** = face visible.
+
+- **TR** (haut-droite) : identité — photo, nom, société, QR checkin, bandeau statut  
+- **TL** (haut-gauche) : programme / infos événement  
+- **BR** (bas-droite, 180°) : dos du badge — QR vCard contact  
+- **BL** (bas-gauche, 180°) : instructions d'utilisation
+
+Impression : **A4 portrait, marges nulles, adapter à la page**.
+
+#### Appel depuis une autre page (mode direct)
+
+Passer `id_contact` en query param pour pré-sélectionner un contact sans saisie :
+
+```
+/badge/[eventId]?id_contact=123
+/badge/[eventId]?id_contact=123&prenom=Jean&nom=Dupont&societe=Acme&fonction=DG
+/badge/[eventId]?id_contact=123&autoprint=1   ← imprime automatiquement
+```
+
+Si `prenom`/`nom` sont fournis dans l'URL, aucun appel API n'est effectué (affichage immédiat).  
+Sans ces params, le contact est fetché via `getPartenairesLight` avec filtre `id_contact`.
+
+La page `/go/[eventId]` contient un bouton **« Générer un e-badge A4 »** qui redirige vers cette route.
+
 ### Scanner de checkin QR
 
 **Route** : `/saas/checkin/[eventId]`  

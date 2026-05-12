@@ -62,9 +62,13 @@ export default async function EventsPage() {
                                             {event.nom}
                                         </TableCell>
                                         <TableCell>
-                                            {event.date_debut ? new Date(event.date_debut).toLocaleDateString() : 'N/A'}
+                                            {event.event_start ? new Date(event.event_start).toLocaleDateString() : 'N/A'}
                                         </TableCell>
-                                        <TableCell>{event.lieu || 'Online'}</TableCell>
+                                        <TableCell>
+                                            {event.lieu?.lieu_nom
+                                                ? `${event.lieu.lieu_nom}${event.lieu.lieu_ville ? `, ${event.lieu.lieu_ville}` : ''}`
+                                                : 'Online'}
+                                        </TableCell>
                                         <TableCell>
                                             <Badge variant={event.actif === '1' ? 'default' : 'secondary'}>
                                                 {event.actif === '1' ? 'Active' : 'Inactive'}

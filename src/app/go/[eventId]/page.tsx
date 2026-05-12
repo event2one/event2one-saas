@@ -3,7 +3,8 @@
 import { useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Search, QrCode, X, User, Download } from 'lucide-react'
+import { Search, QrCode, X, User, Download, CreditCard } from 'lucide-react'
+import Link from 'next/link'
 
 const API_URL = 'https://www.mlg-consulting.com/smart_territory/form/api.php'
 const DIR_IMG = '//www.mlg-consulting.com/manager_cc/contacts/img_uploaded/'
@@ -34,8 +35,8 @@ export default function QrBadgeGenerator() {
         if (!q || q.length < 2) { setResults([]); return }
         setLoading(true)
         try {
-            const params = `AND id_event=${eventId} AND (c.nom LIKE '%${q}%' OR c.prenom LIKE '%${q}%') LIMIT 20`
-            const res = await fetch(`${API_URL}?action=getPartenaires&params=${encodeURIComponent(params)}`)
+            const params = `AND cf.id_event=${eventId} AND (c.nom LIKE '%${q}%' OR c.prenom LIKE '%${q}%')   `
+            const res = await fetch(`${API_URL}?action=getPartenairesLight&params=${encodeURIComponent(params)}`)
             const data = await res.json()
             setResults(Array.isArray(data) ? data : [])
         } catch {
@@ -53,15 +54,24 @@ export default function QrBadgeGenerator() {
 
     const qrSrc = (c: Contact) =>
         `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(
-            JSON.stringify({ id_event: String(eventId), id_conferencier: String(c.id_contact) })
+            JSON.stringify({ id_event: String(eventId), id_contact: String(c.id_contact) })
         )}`
 
     return (
         <div className={`min-h-screen p-6 ${dark ? 'bg-neutral-950 text-white' : 'bg-gray-50 text-gray-900'}`}>
-            <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                <QrCode size={28} />
-                Générer un badge QR
-            </h1>
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                    <QrCode size={28} />
+                    Générer un badge QR
+                </h1>
+                <Link
+                    href={`/badge/${eventId}`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+                >
+                    <CreditCard size={16} />
+                    Générer un e-badge A4
+                </Link>
+            </div>
 
             <div className="relative mb-6 max-w-xl">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -138,7 +148,7 @@ export default function QrBadgeGenerator() {
                             />
                             <div className={`mt-4 rounded-lg p-3 text-xs text-left font-mono ${dark ? 'bg-neutral-800' : 'bg-gray-50'}`}>
                                 <p className="text-gray-400">id_event : <span className="text-blue-400">{eventId}</span></p>
-                                <p className="text-gray-400">id_conferencier : <span className="text-blue-400">{selected.contact.id_contact}</span></p>
+                                <p className="text-gray-400">id_contact : <span className="text-blue-400">{selected.contact.id_contact}</span></p>
                             </div>
                             <a
                                 href={qrSrc(selected.contact)}

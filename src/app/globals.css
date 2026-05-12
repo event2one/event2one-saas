@@ -290,3 +290,14 @@ html {
 .animate-scroll {
   animation: scroll 30s linear infinite;
 }
+
+/* ID Document Scanner */
+@keyframes id-scan {
+  0%   { top: 2%;  opacity: 1; }
+  88%  { top: 91%; opacity: 1; }
+  100% { top: 91%; opacity: 0; }
+}
+
+.animate-id-scan {
+  animation: id-scan 1.6s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}

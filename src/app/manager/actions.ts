@@ -15,8 +15,15 @@ async function requireSession() {
 }
 
 export async function getManagerEvents() {
-    // TODO: Implement with MLG API when authentication is ready
-    return [];
+    try {
+        const response = await axios.get(`${API_URL}?action=getEvents&futur=y&params=%20where%20%20event_start%20%3E%20(DATE_SUB(current_date(),%20INTERVAL%202%20YEAR))%20AND`);
+      
+      console.log(response.data)
+        return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+        console.error('Failed to fetch events:', error);
+        return [];
+    }
 }
 
 export async function createManagerEvent(formData: FormData) {
@@ -47,6 +54,46 @@ export async function createManagerEvent(formData: FormData) {
     } catch (error) {
         console.error('Failed to create event:', error);
         return { error: 'Failed to create event' };
+    }
+}
+
+export async function getManagerEvent(eventId: string) {
+    try {
+        const response = await axios.get(`${API_URL}?action=getEvents&id_event=${eventId}`);
+        const data = response.data;
+        return Array.isArray(data) ? (data[0] ?? null) : (data ?? null);
+    } catch (error) {
+        console.error('Failed to fetch event:', error);
+        return null;
+    }
+}
+
+export async function updateManagerEvent(eventId: string, formData: FormData) {
+    await requireSession();
+
+    const nom = formData.get('nom');
+    const date_debut = formData.get('date_debut');
+    const date_fin = formData.get('date_fin');
+    const description = formData.get('description');
+    const actif = formData.get('actif') === '1' ? '1' : '0';
+
+    try {
+        const response = await axios.post(`${API_URL}?action=updateEvent`, {
+            id_event: eventId,
+            nom,
+            date_debut: date_debut || null,
+            date_fin: date_fin || null,
+            description,
+            actif,
+        });
+
+        if (response.data && response.data.success) {
+            return { success: true };
+        }
+        return { error: response.data?.error || 'Failed to update event' };
+    } catch (error) {
+        console.error('Failed to update event:', error);
+        return { error: 'Failed to update event' };
     }
 }
 
