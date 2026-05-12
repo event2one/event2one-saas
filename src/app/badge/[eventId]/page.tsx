@@ -98,11 +98,16 @@ function BadgeA4({ c, event, eventId, accent }: {
                 @page { size: A4 portrait; margin: 0; }
                 @media print {
                     html, body { margin: 0 !important; padding: 0 !important; background: white !important; }
-                    body > * { display: none !important; }
-                    #badge-print-root { display: block !important; }
+                    #badge-ui { display: none !important; }
+                    #badge-preview-overlay { display: none !important; }
                 }
                 @media screen {
-                    #badge-print-root { display: none; }
+                    #badge-print-root {
+                        position: absolute;
+                        left: -99999px;
+                        top: 0;
+                        width: 210mm;
+                    }
                 }
             `}</style>
 
@@ -269,6 +274,7 @@ function BadgePreview({ c, event, eventId, accent, onPrint, onClose }: {
 
     return (
         <div
+            id="badge-preview-overlay"
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto', padding: '24px 16px 32px' }}
             onClick={onClose}
         >
@@ -648,12 +654,6 @@ function EBadgeGeneratorInner() {
                 />
             )}
 
-            {/* Hide screen UI on print */}
-            <style>{`
-                @media print {
-                    #badge-ui { display: none !important; }
-                }
-            `}</style>
         </>
     )
 }
