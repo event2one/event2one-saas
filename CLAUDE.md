@@ -100,6 +100,17 @@ Utilise `html5-qrcode` (chargé dynamiquement pour éviter les erreurs SSR). Pha
 
 **Prérequis accès caméra mobile** : HTTPS obligatoire. En développement, utiliser `ngrok http 3002` pour exposer le serveur.
 
+#### Format du payload QR attendu
+
+Les QR codes générés par `/go/[eventId]` et `/badge/[eventId]` encodent :
+
+```json
+{ "id_event": "123", "id_contact": "456" }
+```
+
+> **Important** : le champ est `id_contact` (et non `id_conferencier`).  
+> `id_conferencier` reste le nom de colonne SQL dans la table `conferenciers` (broadcast, register) — ne pas confondre.
+
 ---
 
 ## Champs à venir (backlog)
