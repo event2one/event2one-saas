@@ -30,7 +30,7 @@ type Contact = {
 
 type CheckinPayload = {
     id_event: string
-    id_conferencier: string
+    id_contact: string
     scan_type: 'entree'
     scan_identifier: string
     scanner_email: string
@@ -118,7 +118,7 @@ export default function QrCheckinScanner() {
     const { eventId } = useParams<{ eventId: string }>()
     const [phase, setPhase] = useState<Phase>('config')
     const [config, setConfig] = useState<Config>(emptyConfig)
-    const [scanData, setScanData] = useState<{ id_event: string; id_conferencier: string } | null>(null)
+    const [scanData, setScanData] = useState<{ id_event: string; id_contact: string } | null>(null)
     const [contact, setContact] = useState<Contact | null>(null)
     const [errorMsg, setErrorMsg] = useState('')
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('pending')
@@ -201,7 +201,7 @@ export default function QrCheckinScanner() {
                     beep()
                     vibrate()
 
-                    let payload: { id_event?: string; id_conferencier?: string }
+                    let payload: { id_event?: string; id_contact?: string }
                     try { payload = JSON.parse(decodedText) }
                     catch {
                         qr!.stop().catch(() => { })
@@ -212,10 +212,10 @@ export default function QrCheckinScanner() {
                     }
 
                     const resolvedEvent = payload.id_event || eventId
-                    if (!resolvedEvent || !payload.id_conferencier) {
+                    if (!resolvedEvent || !payload.id_contact) {
                         qr!.stop().catch(() => { })
                         qrRef.current = null
-                        setErrorMsg('QR invalide : id_event / id_conferencier manquants')
+                        setErrorMsg('QR invalide : id_event / id_contact manquants')
                         setPhase('error')
                         return
                     }
@@ -225,24 +225,24 @@ export default function QrCheckinScanner() {
 
                     const checkinPayload: CheckinPayload = {
                         id_event: resolvedEvent,
-                        id_conferencier: payload.id_conferencier,
+                        id_contact: payload.id_contact,
                         scan_type: 'entree',
                         scan_identifier: configRef.current.scan_identifier,
                         scanner_email: configRef.current.scanner_email,
                         scan_point: configRef.current.scan_point,
                     }
 
-                    setScanData({ id_event: resolvedEvent, id_conferencier: payload.id_conferencier })
+                    setScanData({ id_event: resolvedEvent, id_contact: payload.id_contact })
                     setContact(null)
                     setSaveStatus('pending')
                     setPhase('success')
 
                     // Fetch contact — fall back to local cache if offline
-                    fetch(`${API_URL}?action=getContact&id_contact=${payload.id_conferencier}`)
+                    fetch(`${API_URL}?action=getContact&id_contact=${payload.id_contact}`)
                         .then(r => r.json())
                         .then(c => { cacheContact(c); setContact(c) })
                         .catch(() => {
-                            const cached = getCachedContact(payload.id_conferencier!)
+                            const cached = getCachedContact(payload.id_contact!)
                             if (cached) setContact(cached)
                         })
 
