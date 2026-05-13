@@ -469,7 +469,7 @@ function EBadgeGeneratorInner() {
         setTokenLoading(true)
         setTokenError(null)
         loadEvent()
-        fetch(`/api/badge/token?t=${encodeURIComponent(urlToken)}`)
+        fetch(`/saas/api/badge/token?t=${encodeURIComponent(urlToken)}`)
             .then(r => r.json())
             .then((data: BadgeTokenPayload & { error?: string }) => {
                 if (data.error) {
