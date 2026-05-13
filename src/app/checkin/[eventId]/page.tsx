@@ -201,14 +201,22 @@ export default function QrCheckinScanner() {
                     beep()
                     vibrate()
 
+                    // Parser le QR — 2 formats supportés :
+                    //   compact (nouveau) : "id_event:id_contact"  ex: "123:456"
+                    //   JSON (legacy)     : {"id_event":"123","id_contact":"456"}
                     let payload: { id_event?: string; id_contact?: string }
-                    try { payload = JSON.parse(decodedText) }
-                    catch {
-                        qr!.stop().catch(() => { })
-                        qrRef.current = null
-                        setErrorMsg('QR non reconnu — format invalide')
-                        setPhase('error')
-                        return
+                    const compactMatch = /^(\d+):(\d+)$/.exec(decodedText.trim())
+                    if (compactMatch) {
+                        payload = { id_event: compactMatch[1], id_contact: compactMatch[2] }
+                    } else {
+                        try { payload = JSON.parse(decodedText) }
+                        catch {
+                            qr!.stop().catch(() => { })
+                            qrRef.current = null
+                            setErrorMsg('QR non reconnu — format invalide')
+                            setPhase('error')
+                            return
+                        }
                     }
 
                     const resolvedEvent = payload.id_event || eventId
@@ -219,7 +227,7 @@ export default function QrCheckinScanner() {
                         setPhase('error')
                         return
                     }
-
+ 
                     qr!.stop().catch(() => { })
                     qrRef.current = null
 

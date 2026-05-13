@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { Search, CreditCard, X, User, Printer, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import type { BadgeTokenPayload } from '@/lib/badge-token'
 
 const API_URL = 'https://www.mlg-consulting.com/smart_territory/form/api.php'
 const DIR_IMG = '//www.mlg-consulting.com/manager_cc/contacts/img_uploaded/'
@@ -65,9 +66,7 @@ function BadgeA4({ c, event, eventId, accent }: {
             : '')
     const venue = [event?.lieu?.lieu_nom, event?.lieu?.lieu_ville].filter(Boolean).join(' — ')
 
-    const qrCheckin = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(
-        JSON.stringify({ id_event: eventId, id_contact: c.id_contact })
-    )}`
+    const qrCheckin = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`${eventId}:${c.id_contact}`)}`
     const qrVcard = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(
         `BEGIN:VCARD\nVERSION:3.0\nN:${c.nom};${c.prenom}\nFN:${c.prenom} ${c.nom}\nORG:${c.societe || ''}\nTITLE:${c.fonction_nom || ''}\nEND:VCARD`
     )}`
@@ -330,9 +329,7 @@ function BadgeContent({ c, event, eventId, accent }: {
             : '')
     const venue = [event?.lieu?.lieu_nom, event?.lieu?.lieu_ville].filter(Boolean).join(' — ')
 
-    const qrCheckin = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(
-        JSON.stringify({ id_event: eventId, id_contact: c.id_contact })
-    )}`
+    const qrCheckin = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`${eventId}:${c.id_contact}`)}`
     const qrVcard = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(
         `BEGIN:VCARD\nVERSION:3.0\nN:${c.nom};${c.prenom}\nFN:${c.prenom} ${c.nom}\nORG:${c.societe || ''}\nTITLE:${c.fonction_nom || ''}\nEND:VCARD`
     )}`
@@ -437,15 +434,10 @@ function EBadgeGeneratorInner() {
     const { resolvedTheme } = useTheme()
     const dark = resolvedTheme === 'dark'
 
-    // URL params — for direct badge generation from another page
-    // Usage: /badge/[eventId]?id_contact=123
-    //        /badge/[eventId]?id_contact=123&prenom=Jean&nom=Dupont&societe=Acme&fonction=DG&autoprint=1
-    const urlContactId = searchParams.get('id_contact')
-    const urlPrenom    = searchParams.get('prenom')
-    const urlNom       = searchParams.get('nom')
-    const urlSociete   = searchParams.get('societe')
-    const urlFonction  = searchParams.get('fonction')
-    const urlAutoprint = searchParams.get('autoprint') === '1'
+    // URL param chiffré — pour accès direct depuis une autre page
+    // Usage: /badge/[eventId]?t=<token_chiffré>
+    // Générer le token via POST /api/badge/token
+    const urlToken = searchParams.get('t')
 
     const [query, setQuery]     = useState('')
     const [results, setResults] = useState<Partner[]>([])
@@ -453,6 +445,9 @@ function EBadgeGeneratorInner() {
     const [selected, setSelected] = useState<Partner | null>(null)
     const [event, setEvent]     = useState<EventData | null>(null)
     const [accentColor, setAccentColor] = useState('#2563eb')
+    const [autoprintEnabled, setAutoprintEnabled] = useState(false)
+    const [tokenError, setTokenError] = useState<string | null>(null)
+    const [tokenLoading, setTokenLoading] = useState(false)
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const printedRef  = useRef(false)
 
@@ -468,42 +463,48 @@ function EBadgeGeneratorInner() {
         } catch { /* silent */ }
     }, [eventId])
 
-    // If id_contact in URL → auto-select contact
+    // Si token chiffré dans l'URL → déchiffrer et auto-sélectionner le contact
     useEffect(() => {
-        if (!urlContactId) return
+        if (!urlToken) return
+        setTokenLoading(true)
+        setTokenError(null)
         loadEvent()
-
-        // Build contact from URL params if provided, else fetch from API
-        if (urlPrenom && urlNom) {
-            const c: Contact = {
-                id_contact: urlContactId,
-                prenom: urlPrenom,
-                nom: urlNom,
-                societe: urlSociete || '',
-                fonction_nom: urlFonction || '',
-                photo: '',
-            }
-            setSelected({ contact: c })
-        } else {
-            // Fetch from API
-            const params = `AND cf.id_event=${eventId} AND c.id_contact=${urlContactId}`
-            fetch(`${API_URL}?action=getPartenairesLight&params=${encodeURIComponent(params)}`)
-                .then(r => r.json())
-                .then((data: Partner[]) => {
-                    if (Array.isArray(data) && data[0]) setSelected(data[0])
-                })
-                .catch(() => { /* silent */ })
-        }
+        fetch(`/api/badge/token?t=${encodeURIComponent(urlToken)}`)
+            .then(r => r.json())
+            .then((data: BadgeTokenPayload & { error?: string }) => {
+                if (data.error) {
+                    setTokenError(data.error)
+                    setTokenLoading(false)
+                    return
+                }
+                if (data.autoprint) setAutoprintEnabled(true)
+                // Toujours fetch le contact depuis l'API — le token ne contient pas de PII
+                const params = encodeURIComponent(
+                    `AND cf.id_event=${data.id_event} AND c.id_contact=${data.id_contact}`
+                )
+                fetch(`${API_URL}?action=getPartenairesLight&params=${params}`)
+                    .then(r => r.json())
+                    .then((contacts: Partner[]) => {
+                        if (Array.isArray(contacts) && contacts[0]) setSelected(contacts[0])
+                        else setTokenError('Contact introuvable pour cet événement')
+                    })
+                    .catch(() => setTokenError('Erreur lors du chargement du contact'))
+                    .finally(() => setTokenLoading(false))
+            })
+            .catch(() => {
+                setTokenError('Erreur de déchiffrement du token')
+                setTokenLoading(false)
+            })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [urlContactId])
+    }, [urlToken])
 
-    // Auto-print once badge is selected + event loaded
+    // Auto-print une fois le badge sélectionné + événement chargé
     useEffect(() => {
-        if (urlAutoprint && selected && !printedRef.current) {
+        if (autoprintEnabled && selected && !printedRef.current) {
             printedRef.current = true
             setTimeout(() => window.print(), 600)
         }
-    }, [urlAutoprint, selected])
+    }, [autoprintEnabled, selected])
 
     const search = async (q: string) => {
         if (!q || q.length < 2) { setResults([]); return }
@@ -556,8 +557,24 @@ function EBadgeGeneratorInner() {
                         )}
                     </div>
 
+                    {/* Token loading / error state */}
+                    {urlToken && tokenLoading && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '20px 0', color: muted, fontSize: '14px' }}>
+                            <svg style={{ animation: 'spin 1s linear infinite', width: 20, height: 20 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                            </svg>
+                            <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                            Chargement du badge…
+                        </div>
+                    )}
+                    {urlToken && tokenError && (
+                        <div style={{ padding: '14px 18px', borderRadius: '12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: '13px' }}>
+                            ⚠ {tokenError}
+                        </div>
+                    )}
+
                     {/* Search */}
-                    {!urlContactId && (
+                    {!urlToken && (
                         <>
                             <div style={{ position: 'relative', maxWidth: '480px', marginBottom: '24px' }}>
                                 <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} size={17} />
@@ -607,7 +624,7 @@ function EBadgeGeneratorInner() {
                     )}
 
                     {/* Direct mode: show selected contact info */}
-                    {urlContactId && selected && (
+                    {urlToken && selected && (
                         <div style={{ padding: '16px', borderRadius: '14px', border: `1px solid ${border}`, background: card, display: 'inline-flex', alignItems: 'center', gap: '12px' }}>
                             {selected.contact.photo
                                 ? <img src={`${DIR_IMG}${selected.contact.photo}`} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
@@ -640,7 +657,7 @@ function EBadgeGeneratorInner() {
                     eventId={eventId}
                     accent={accentColor}
                     onPrint={() => window.print()}
-                    onClose={() => { if (!urlContactId) setSelected(null) }}
+                    onClose={() => { if (!urlToken) setSelected(null) }}
                 />
             )}
 
