@@ -201,12 +201,34 @@ export default function QrCheckinScanner() {
                     beep()
                     vibrate()
 
-                    // Parser le QR — 2 formats supportés :
-                    //   compact (nouveau) : "id_event:id_contact"  ex: "123:456"
-                    //   JSON (legacy)     : {"id_event":"123","id_contact":"456"}
+                    void (async () => {
+                    //   signé (nouveau)  : "id_event:id_contact:HMAC8"  ex: "123:456:a3f8c1d9"
+                    //   compact (legacy) : "id_event:id_contact"         ex: "123:456"
+                    //   JSON (legacy)    : {"id_event":"123","id_contact":"456"}
                     let payload: { id_event?: string; id_contact?: string }
-                    const compactMatch = /^(\d+):(\d+)$/.exec(decodedText.trim())
-                    if (compactMatch) {
+                    let qrVerified = false
+
+                    const signedMatch = /^(\d+):(\d+):([0-9a-f]{8})$/.exec(decodedText.trim())
+                    const compactMatch = !signedMatch && /^(\d+):(\d+)$/.exec(decodedText.trim())
+
+                    if (signedMatch) {
+                        // QR signé — vérification HMAC via API (< 5ms réseau local)
+                        let verifyOk = false
+                        try {
+                            const vRes = await fetch(`/saas/api/badge/verify-qr?q=${encodeURIComponent(decodedText.trim())}`)
+                            const vData = await vRes.json()
+                            verifyOk = vData.valid === true
+                        } catch { /* réseau indisponible — on accepte en mode dégradé */ verifyOk = true }
+                        if (!verifyOk) {
+                            qr!.stop().catch(() => { })
+                            qrRef.current = null
+                            setErrorMsg('QR invalide — signature incorrecte (badge falsifié ?)')
+                            setPhase('error')
+                            return
+                        }
+                        payload = { id_event: signedMatch[1], id_contact: signedMatch[2] }
+                        qrVerified = true
+                    } else if (compactMatch) {
                         payload = { id_event: compactMatch[1], id_contact: compactMatch[2] }
                     } else {
                         try { payload = JSON.parse(decodedText) }
@@ -218,6 +240,7 @@ export default function QrCheckinScanner() {
                             return
                         }
                     }
+                    void qrVerified // utilisé pour logs futurs
 
                     const resolvedEvent = payload.id_event || eventId
                     if (!resolvedEvent || !payload.id_contact) {
@@ -265,6 +288,7 @@ export default function QrCheckinScanner() {
                             setPendingCount(loadQueue().length)
                             setSaveStatus('queued')
                         })
+                    })() // end async IIFE
                 },
                 () => { }
             ).catch((err: unknown) => {

@@ -50,219 +50,14 @@ type EventData = {
 //  Pliage : rabattre bas sur haut → plier droite derrière gauche
 //  → TR devient la face visible dans la pochette A6
 
-function BadgeA4({ c, event, eventId, accent }: {
-    c: Contact
-    event: EventData | null
-    eventId: string
-    accent: string
-}) {
-    const fullName = `${c.prenom} ${c.nom}`.toUpperCase()
-    const society = (c.societe || '').toUpperCase()
-    const jobTitle = c.fonction_nom || ''
-    const eventName = event?.nom || `Événement #${eventId}`
-    const eventDate = event?.precision_date ||
-        (event?.event_start
-            ? new Date(event.event_start).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-            : '')
-    const venue = [event?.lieu?.lieu_nom, event?.lieu?.lieu_ville].filter(Boolean).join(' — ')
-
-    const qrCheckin = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`${eventId}:${c.id_contact}`)}`
-    const qrVcard = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(
-        `BEGIN:VCARD\nVERSION:3.0\nN:${c.nom};${c.prenom}\nFN:${c.prenom} ${c.nom}\nORG:${c.societe || ''}\nTITLE:${c.fonction_nom || ''}\nEND:VCARD`
-    )}`
-
-    const zone: React.CSSProperties = {
-        boxSizing: 'border-box',
-        overflow: 'hidden',
-        position: 'relative',
-        width: '105mm',
-        height: '148.5mm',
-    }
-
-    const headerBand = (): React.CSSProperties => ({
-        background: accent,
-        color: '#fff',
-        textAlign: 'center',
-        fontWeight: 900,
-        fontSize: '9pt',
-        letterSpacing: '1px',
-        padding: '2.5mm 4mm',
-        textTransform: 'uppercase',
-    })
-
-    return (
-        <>
-            {/* Global print CSS — injected once */}
-            <style>{`
-                @page { size: A4 portrait; margin: 0; }
-                @media print {
-                    html, body { margin: 0 !important; padding: 0 !important; background: white !important; }
-                    #badge-ui { display: none !important; }
-                    #badge-preview-overlay { display: none !important; }
-                }
-                @media screen {
-                    #badge-print-root {
-                        position: absolute;
-                        left: -99999px;
-                        top: 0;
-                        width: 210mm;
-                    }
-                }
-            `}</style>
-
-            <div
-                id="badge-print-root"
-                style={{
-                    width: '210mm',
-                    height: '297mm',
-                    display: 'grid',
-                    gridTemplateColumns: '105mm 105mm',
-                    gridTemplateRows: '148.5mm 148.5mm',
-                    fontFamily: 'Arial, Helvetica, sans-serif',
-                    background: '#fff',
-                    position: 'relative',
-                }}
-            >
-                {/* ── TL : Intérieur gauche — programme / infos événement ── */}
-                <div style={{
-                    ...zone,
-                    borderRight: '1px dashed #bbb',
-                    borderBottom: '1px dashed #bbb',
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}>
-                    <div style={headerBand()}>{eventName}</div>
-                    <div style={{ flex: 1, padding: '5mm 6mm', display: 'flex', flexDirection: 'column', gap: '3mm', fontSize: '8pt', color: '#333' }}>
-                        {eventDate && <div><strong>Date :</strong> {eventDate}</div>}
-                        {venue && <div><strong>Lieu :</strong> {venue}</div>}
-                        <div style={{ marginTop: '3mm', fontWeight: 'bold', color: accent, textTransform: 'uppercase', fontSize: '7.5pt' }}>
-                            Votre programme
-                        </div>
-                        <div style={{ flex: 1, borderTop: `1px solid ${accent}33`, paddingTop: '3mm', color: '#888', fontSize: '7pt', fontStyle: 'italic', lineHeight: 1.6 }}>
-                            Consultez votre programme en vous connectant à votre espace personnel event2one.
-                        </div>
-                        <div style={{ textAlign: 'center', marginTop: 'auto' }}>
-                            <img src={qrCheckin} alt="QR" style={{ width: '22mm', height: '22mm' }} />
-                            <div style={{ fontSize: '6pt', color: '#999', marginTop: '1mm' }}>Espace personnel</div>
-                        </div>
-                    </div>
-                    <div style={{ padding: '2mm 6mm', fontSize: '6pt', color: '#ccc', textAlign: 'center', borderTop: '0.5px solid #eee' }}>
-                        ✂ plier ici
-                    </div>
-                </div>
-
-                {/* ── TR : FACE VISIBLE — identité du participant ── */}
-                <div style={{
-                    ...zone,
-                    borderBottom: '1px dashed #bbb',
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}>
-                    {/* Event header */}
-                    <div style={{ background: accent, color: '#fff', padding: '3.5mm 5mm', textAlign: 'center' }}>
-                        <div style={{ fontSize: '8pt', fontWeight: 900, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{eventName}</div>
-                        {eventDate && <div style={{ fontSize: '6.5pt', opacity: 0.85, marginTop: '0.5mm' }}>{eventDate}</div>}
-                    </div>
-
-                    {/* Photo + identity */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5mm 6mm', gap: '3mm', textAlign: 'center' }}>
-                        {c.photo
-                            ? <img src={`${DIR_IMG}${c.photo}`} alt="" style={{ width: '24mm', height: '24mm', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${accent}` }} />
-                            : (
-                                <div style={{ width: '24mm', height: '24mm', borderRadius: '50%', background: `${accent}18`, border: `2px solid ${accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16pt', color: accent, fontWeight: 900 }}>
-                                    {c.prenom.charAt(0)}{c.nom.charAt(0)}
-                                </div>
-                            )
-                        }
-
-                        <div style={{ fontSize: '16pt', fontWeight: 900, color: '#111', lineHeight: 1.1, wordBreak: 'break-word' }}>
-                            {fullName}
-                        </div>
-                        {jobTitle && (
-                            <div style={{ fontSize: '8pt', color: '#777' }}>{jobTitle}</div>
-                        )}
-                        {society && (
-                            <div style={{ fontSize: '11pt', fontWeight: 700, color: '#333' }}>{society}</div>
-                        )}
-
-                        {/* QR checkin */}
-                        <img src={qrCheckin} alt="QR" style={{ width: '30mm', height: '30mm', marginTop: '2mm' }} />
-                        <div style={{ fontSize: '6.5pt', color: '#999' }}>Scanner pour accéder au profil</div>
-                    </div>
-
-                    {/* Statut band */}
-                    <div style={{ background: accent, color: '#fff', textAlign: 'center', fontWeight: 900, fontSize: '15pt', padding: '3.5mm', letterSpacing: '2px' }}>
-                        PARTICIPANT
-                    </div>
-                </div>
-
-                {/* ── BL : Intérieur droite — instructions (rot 180°) ── */}
-                <div style={{
-                    ...zone,
-                    borderRight: '1px dashed #bbb',
-                    transform: 'rotate(180deg)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '6mm',
-                    gap: '3mm',
-                }}>
-                    <div style={{ fontWeight: 900, fontSize: '9pt', color: accent, textTransform: 'uppercase' }}>
-                        Votre badge d&apos;accès rapide
-                    </div>
-                    <div style={{ fontSize: '8pt', color: '#333', lineHeight: 1.7, flex: 1 }}>
-                        <div>1/ Imprimez votre badge et munissez-vous en pour accéder à l&apos;événement.</div>
-                        <br />
-                        <div>2/ <strong>Pliez-le en 4</strong> et insérez-le dans le porte-badge distribué à l&apos;entrée.</div>
-                        <br />
-                        <div>3/ Conservez-le précieusement : il vous sera demandé à chaque entrée.</div>
-                        <br />
-                        <div style={{ fontWeight: 700 }}>4/ Nous recyclons vos badges ! Merci de les remettre aux hôtesses lors de votre départ.</div>
-                        <br />
-                        <div style={{ color: '#888', fontSize: '7pt' }}>Le port du badge est obligatoire. Bonne visite !</div>
-                    </div>
-                    <div style={{ fontSize: '6.5pt', color: '#bbb', borderTop: '0.5px solid #eee', paddingTop: '2mm' }}>
-                        Une solution event2one — www.event2one.com
-                    </div>
-                </div>
-
-                {/* ── BR : Dos du badge — vCard QR (rot 180°) ── */}
-                <div style={{
-                    ...zone,
-                    transform: 'rotate(180deg)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '6mm',
-                    gap: '3.5mm',
-                    textAlign: 'center',
-                }}>
-                    <div style={{ background: accent, color: '#fff', padding: '2.5mm 5mm', fontSize: '8pt', fontWeight: 900, borderRadius: '1mm', letterSpacing: '0.5px' }}>
-                        PARTAGEZ VOS COORDONNÉES
-                    </div>
-                    <img src={qrVcard} alt="vCard QR" style={{ width: '32mm', height: '32mm' }} />
-                    <div style={{ fontSize: '9pt', fontWeight: 700, color: '#222' }}>{c.prenom} {c.nom}</div>
-                    {c.societe && <div style={{ fontSize: '8pt', color: '#555' }}>{c.societe}</div>}
-                    {c.fonction_nom && <div style={{ fontSize: '7pt', color: '#888' }}>{c.fonction_nom}</div>}
-                    <div style={{ fontSize: '6.5pt', color: '#aaa', marginTop: '2mm' }}>
-                        Scannez pour enregistrer le contact
-                    </div>
-                    <div style={{ fontSize: '6pt', color: '#ccc', marginTop: 'auto' }}>
-                        event2one — Professional Event Management
-                    </div>
-                </div>
-            </div>
-        </>
-    )
-}
-
 // ─── Badge preview card (scaled for screen) ──────────────────────────────────
 
-function BadgePreview({ c, event, eventId, accent, onPrint, onClose }: {
+function BadgePreview({ c, event, eventId, accent, qrData, onPrint, onClose }: {
     c: Contact
     event: EventData | null
     eventId: string
     accent: string
+    qrData?: string
     onPrint: () => void
     onClose: () => void
 }) {
@@ -299,7 +94,7 @@ function BadgePreview({ c, event, eventId, accent, onPrint, onClose }: {
                 {/* Scaled badge */}
                 <div style={{ width: `${W * SCALE}px`, height: `${H * SCALE}px`, overflow: 'hidden', margin: '0 auto', boxShadow: '0 8px 40px rgba(0,0,0,0.5)', borderRadius: '4px' }}>
                     <div style={{ width: `${W}px`, height: `${H}px`, transform: `scale(${SCALE})`, transformOrigin: 'top left', pointerEvents: 'none' }}>
-                        <BadgeContent c={c} event={event} eventId={eventId} accent={accent} />
+                        <BadgeContent c={c} event={event} eventId={eventId} accent={accent} qrData={qrData} />
                     </div>
                 </div>
 
@@ -313,11 +108,12 @@ function BadgePreview({ c, event, eventId, accent, onPrint, onClose }: {
 
 // ─── Badge content WITHOUT the print CSS (used only for preview) ─────────────
 
-function BadgeContent({ c, event, eventId, accent }: {
+function BadgeContent({ c, event, eventId, accent, qrData }: {
     c: Contact
     event: EventData | null
     eventId: string
     accent: string
+    qrData?: string
 }) {
     const fullName = `${c.prenom} ${c.nom}`.toUpperCase()
     const society = (c.societe || '').toUpperCase()
@@ -329,7 +125,8 @@ function BadgeContent({ c, event, eventId, accent }: {
             : '')
     const venue = [event?.lieu?.lieu_nom, event?.lieu?.lieu_ville].filter(Boolean).join(' — ')
 
-    const qrCheckin = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(`${eventId}:${c.id_contact}`)}`
+    const checkinData = qrData || `${eventId}:${c.id_contact}`
+    const qrCheckin = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(checkinData)}`
     const qrVcard = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(
         `BEGIN:VCARD\nVERSION:3.0\nN:${c.nom};${c.prenom}\nFN:${c.prenom} ${c.nom}\nORG:${c.societe || ''}\nTITLE:${c.fonction_nom || ''}\nEND:VCARD`
     )}`
@@ -446,6 +243,7 @@ function EBadgeGeneratorInner() {
     const [event, setEvent]     = useState<EventData | null>(null)
     const [accentColor, setAccentColor] = useState('#2563eb')
     const [autoprintEnabled, setAutoprintEnabled] = useState(false)
+    const [signedQrData, setSignedQrData] = useState<string | null>(null)
     const [tokenError, setTokenError] = useState<string | null>(null)
     const [tokenLoading, setTokenLoading] = useState(false)
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -471,13 +269,14 @@ function EBadgeGeneratorInner() {
         loadEvent()
         fetch(`/saas/api/badge/token?t=${encodeURIComponent(urlToken)}`)
             .then(r => r.json())
-            .then((data: BadgeTokenPayload & { error?: string }) => {
+            .then((data: BadgeTokenPayload & { error?: string; qrData?: string }) => {
                 if (data.error) {
                     setTokenError(data.error)
                     setTokenLoading(false)
                     return
                 }
                 if (data.autoprint) setAutoprintEnabled(true)
+                if (data.qrData) setSignedQrData(data.qrData)
                 // Toujours fetch le contact depuis l'API — le token ne contient pas de PII
                 const params = encodeURIComponent(
                     `AND cf.id_event=${data.id_event} AND c.id_contact=${data.id_contact}`
@@ -598,7 +397,19 @@ function EBadgeGeneratorInner() {
                                     return (
                                         <button
                                             key={c.id_contact}
-                                            onClick={() => { setSelected(p); if (!event) loadEvent() }}
+                                            onClick={() => {
+                                                setSelected(p)
+                                                if (!event) loadEvent()
+                                                // Obtenir le QR signé pour ce contact
+                                                fetch('/saas/api/badge/token', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ id_event: eventId, id_contact: c.id_contact }),
+                                                })
+                                                    .then(r => r.json())
+                                                    .then(d => { if (d.qrData) setSignedQrData(d.qrData) })
+                                                    .catch(() => { /* fallback unsigned */ })
+                                            }}
                                             style={{ textAlign: 'left', padding: '14px', borderRadius: '14px', border: `1px solid ${border}`, background: card, cursor: 'pointer', transition: 'border-color .2s' }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -656,20 +467,30 @@ function EBadgeGeneratorInner() {
                     event={event}
                     eventId={eventId}
                     accent={accentColor}
-                    onPrint={() => window.print()}
-                    onClose={() => { if (!urlToken) setSelected(null) }}
+                    qrData={signedQrData ?? undefined}
+                    onPrint={() => {
+                        if (urlToken) {
+                            // Token déjà disponible — ouvrir directement
+                            window.open(`/saas/print/badge/${eventId}?t=${encodeURIComponent(urlToken)}`, '_blank')
+                        } else {
+                            // Mode recherche — générer un token à la volée
+                            fetch('/saas/api/badge/token', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id_event: eventId, id_contact: selected.contact.id_contact }),
+                            })
+                                .then(r => r.json())
+                                .then(d => {
+                                    if (d.token) window.open(`/saas/print/badge/${eventId}?t=${encodeURIComponent(d.token)}`, '_blank')
+                                })
+                                .catch(() => window.print()) // fallback
+                        }
+                    }}
+                    onClose={() => setSelected(null)}
                 />
             )}
 
-            {/* ── Print-only badge (always in DOM when selected, hidden on screen) ── */}
-            {selected && (
-                <BadgeA4
-                    c={selected.contact}
-                    event={event}
-                    eventId={eventId}
-                    accent={accentColor}
-                />
-            )}
+            {/* Print-only badge supprimé — remplacé par la route /print/badge/[eventId] */}
 
         </>
     )

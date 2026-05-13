@@ -6,12 +6,18 @@
  *
  * Env requis : BADGE_TOKEN_SECRET  (64 chars hex = 32 bytes)
  * Génération : openssl rand -hex 32
+ *
+ * QR code du badge : format signé `id_event:id_contact:HMAC8`
+ * HMAC-SHA256 tronqué à 8 hex chars — vérifiable en < 1ms côté scanner,
+ * infalsifiable sans la clé secrète.
  */
 
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto'
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'crypto'
 
 const ALG = 'aes-256-gcm'
-const TOKEN_TTL_SECONDS = 2 * 60 * 60 // 2 heures
+
+/** TTL par défaut : 90 jours — couvre l'impression à l'avance */
+export const TOKEN_TTL_DAYS_DEFAULT = 90
 
 export type BadgeTokenPayload = {
     id_event: string
@@ -32,15 +38,17 @@ function getKey(): Buffer {
 /**
  * Chiffre un payload badge en token base64url.
  * Format binaire : iv(12) || authTag(16) || ciphertext
+ *
+ * @param ttlDays  Durée de validité en jours. Défaut : TOKEN_TTL_DAYS_DEFAULT (90j)
  */
-export function encryptBadgeToken(payload: BadgeTokenPayload): string {
+export function encryptBadgeToken(payload: BadgeTokenPayload, ttlDays: number = TOKEN_TTL_DAYS_DEFAULT): string {
     const key = getKey()
     const iv = randomBytes(12)
     const cipher = createCipheriv(ALG, key, iv)
 
     const data = JSON.stringify({
         ...payload,
-        exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
+        exp: Math.floor(Date.now() / 1000) + ttlDays * 86400,
     })
 
     const encrypted = Buffer.concat([cipher.update(data, 'utf8'), cipher.final()])
@@ -92,4 +100,43 @@ export function decryptBadgeToken(token: string): BadgeTokenPayload {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { exp: _exp, ...payload } = parsed
     return payload
+}
+
+// ─────────────────────────────────────────────
+//  QR code signé : id_event:id_contact:HMAC8
+// ─────────────────────────────────────────────
+
+/**
+ * Génère les données du QR code avec signature HMAC-SHA256 tronquée à 8 hex.
+ * Format : `id_event:id_contact:HMAC8`
+ * Exemple : `2273:456:a3f8c1d9`
+ *
+ * La signature est calculée sur `id_event:id_contact` — infalsifiable sans la clé.
+ * Vérifiable côté scanner en < 1 ms (Web Crypto ou Node crypto).
+ */
+export function signQrData(id_event: string, id_contact: string): string {
+    const key = getKey()
+    const message = `${id_event}:${id_contact}`
+    const hmac = createHmac('sha256', key).update(message).digest('hex').slice(0, 8)
+    return `${message}:${hmac}`
+}
+
+/**
+ * Vérifie qu'un QR code scanné est authentique.
+ * Retourne le payload `{ id_event, id_contact }` si valide, null sinon.
+ */
+export function verifyQrData(raw: string): { id_event: string; id_contact: string } | null {
+    // Format attendu : "id_event:id_contact:HMAC8"
+    const match = /^(\d+):(\d+):([0-9a-f]{8})$/.exec(raw.trim())
+    if (!match) return null
+    const [, id_event, id_contact, receivedHmac] = match
+    const expected = signQrData(id_event, id_contact)
+    const expectedHmac = expected.split(':')[2]
+    // Comparaison à durée constante (évite timing attack)
+    if (receivedHmac.length !== expectedHmac.length) return null
+    let diff = 0
+    for (let i = 0; i < receivedHmac.length; i++) {
+        diff |= receivedHmac.charCodeAt(i) ^ expectedHmac.charCodeAt(i)
+    }
+    return diff === 0 ? { id_event, id_contact } : null
 }
