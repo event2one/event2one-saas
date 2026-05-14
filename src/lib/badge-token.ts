@@ -12,7 +12,7 @@
  * infalsifiable sans la clé secrète.
  */
 
-import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'crypto'
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'crypto'
 
 const ALG = 'aes-256-gcm'
 
@@ -27,12 +27,19 @@ export type BadgeTokenPayload = {
 
 function getKey(): Buffer {
     const secret = process.env.BADGE_TOKEN_SECRET
-    if (!secret) throw new Error('BADGE_TOKEN_SECRET is not configured')
-    if (/^[0-9a-f]{64}$/i.test(secret)) return Buffer.from(secret, 'hex')
-    // Accepte aussi base64 (44 chars → 32 bytes)
-    const buf = Buffer.from(secret, 'base64')
-    if (buf.length < 32) throw new Error('BADGE_TOKEN_SECRET too short (need 32 bytes)')
-    return buf.subarray(0, 32)
+    if (secret) {
+        if (/^[0-9a-f]{64}$/i.test(secret)) return Buffer.from(secret, 'hex')
+        const buf = Buffer.from(secret, 'base64')
+        if (buf.length < 32) throw new Error('BADGE_TOKEN_SECRET too short (need 32 bytes)')
+        return buf.subarray(0, 32)
+    }
+    // Fallback : dérive une clé stable depuis BETTER_AUTH_SECRET ou AUTH_SECRET.
+    // Garantit la cohérence si BADGE_TOKEN_SECRET n'est pas explicitement configuré.
+    const authSecret = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET
+    if (authSecret) {
+        return createHash('sha256').update('badge-token:' + authSecret).digest()
+    }
+    throw new Error('BADGE_TOKEN_SECRET is not configured')
 }
 
 /**

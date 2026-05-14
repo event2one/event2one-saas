@@ -129,14 +129,14 @@ function InscritsListItem({
     async function openBadge() {
         setBadgeLoading(true)
         try {
-            const res = await fetch('/api/badge/token', {
+            const res = await fetch('/saas/api/badge/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id_event: idEvent, id_contact: contact.id_contact }),
             })
             const data = await res.json()
             if (data.token) {
-                const printUrl = `/print/badge/${idEvent}?t=${encodeURIComponent(data.token)}`
+                const printUrl = `/saas/print/badge/${idEvent}?t=${encodeURIComponent(data.token)}`
                 window.open(printUrl, '_blank')
             } else {
                 alert('Erreur génération badge : ' + (data.error ?? 'inconnue'))

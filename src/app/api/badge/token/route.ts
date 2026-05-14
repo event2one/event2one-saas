@@ -53,7 +53,12 @@ export async function GET(req: Request) {
         const payload = decryptBadgeToken(t)
         const qrData = signQrData(payload.id_event, payload.id_contact)
         return NextResponse.json({ ...payload, qrData })
-    } catch {
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unknown error'
+        if (msg === 'BADGE_TOKEN_SECRET is not configured') {
+            console.error('[badge/token] BADGE_TOKEN_SECRET is not configured on this server')
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+        }
         return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
     }
 }

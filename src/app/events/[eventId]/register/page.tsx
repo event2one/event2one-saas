@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { API_URL } from '@/utils/api'
-import { IdDocumentUpload } from '@/components/id-document-upload'
+import { IdDocumentUpload, type DocumentType } from '@/components/id-document-upload'
 import ProgramGridSelector from '@/components/ProgramGridSelector'
 
 const LINKEDIN_CLIENT_ID = '78eqa2rddcgy4s'
@@ -53,6 +53,8 @@ const LinkedInIcon = () => (
 type EventConfig = {
     showLinkedIn: boolean
     showIdDocument: boolean
+    requireIdDocument: boolean
+    hiddenFields: FieldKey[]
     primaryColor?: string
     primaryForeground?: string
 }
@@ -60,10 +62,18 @@ type EventConfig = {
 const DEFAULT_CONFIG: EventConfig = {
     showLinkedIn: true,
     showIdDocument: false,
+    requireIdDocument: false,
+    hiddenFields: [],
 }
 
 const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
-    '2273': { showLinkedIn: false, showIdDocument: true, primaryColor: '#170b7e', primaryForeground: '#d8cfc7' },
+    '2273': {
+        showLinkedIn: false,
+        showIdDocument: true,
+        requireIdDocument: true,
+        hiddenFields: ['sn_linkedin', 'port','societe','fonction'],
+        primaryColor: '#170b7e',
+        primaryForeground: '#d8cfc7' },
 }
 
 function RegisterPageInner() {
@@ -71,9 +81,9 @@ function RegisterPageInner() {
     const searchParams = useSearchParams()
     const isEmbed = searchParams.get('embed') === '1'
 
-    const [showLinkedIn] = useState(() => ({ ...DEFAULT_CONFIG, ...EVENT_CONFIG[eventId] }).showLinkedIn)
-    const [showIdDocument] = useState(() => ({ ...DEFAULT_CONFIG, ...EVENT_CONFIG[eventId] }).showIdDocument)
-    const { primaryColor, primaryForeground } = { ...DEFAULT_CONFIG, ...EVENT_CONFIG[eventId] }
+    const eventCfg = { ...DEFAULT_CONFIG, ...(EVENT_CONFIG[eventId] ?? {}) }
+    const { showLinkedIn, showIdDocument, requireIdDocument, primaryColor, primaryForeground } = eventCfg
+    const hiddenFields = new Set<string>(eventCfg.hiddenFields ?? [])
 
     useEffect(() => {
         if (isEmbed) {
@@ -94,6 +104,11 @@ function RegisterPageInner() {
     const [participationTypes, setParticipationTypes] = useState<EventContactType[]>([])
     const [participationTypeId, setParticipationTypeId] = useState('')
     const [selectedSessions, setSelectedSessions] = useState<string[]>([])
+    const [idDoc, setIdDoc] = useState<{ front: File | null; back: File | null; docType: DocumentType }>({
+        front: null, back: null, docType: 'id_card',
+    })
+    const idDocRef = useRef(idDoc)
+    idDocRef.current = idDoc
 
     useEffect(() => {
         fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (143, 466, 467)')}`)
@@ -192,6 +207,12 @@ function RegisterPageInner() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (requireIdDocument && !idDocRef.current.front) {
+            setErrorMsg('Une pièce d\'identité est obligatoire pour valider l\'inscription.')
+            setStatus('error')
+            return
+        }
+
         setStatus('submitting')
         setErrorMsg('')
 
@@ -257,6 +278,22 @@ function RegisterPageInner() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id_contact }),
             })
+
+            // 4. Upload identity document if provided
+            const doc = idDocRef.current
+            const uploadVisuel = (file: File, field: string) => {
+                const fd = new FormData()
+                fd.append('id_contact', String(id_contact))
+                fd.append(field, file)
+                return fetch(`${API_URL}?action=updateContactVisuel`, { method: 'POST', body: fd })
+            }
+            if (doc.front) {
+                const field = doc.docType === 'id_card' ? 'id_card_recto' : 'passeport'
+                await uploadVisuel(doc.front, field)
+            }
+            if (doc.back && doc.docType === 'id_card') {
+                await uploadVisuel(doc.back, 'id_card_verso')
+            }
 
             setStatus('done')
         } catch (err) {
@@ -396,7 +433,7 @@ function RegisterPageInner() {
                                     </select>
                                 </div>
                             )}
-                            {FIELDS.map((field) => {
+                            {FIELDS.filter(f => !hiddenFields.has(f.key)).map((field) => {
                                 const { key, label, required, type } = field
                                 const placeholder = 'placeholder' in field ? field.placeholder : undefined
                                 const full = 'full' in field ? (field as { full?: boolean }).full : false
@@ -442,7 +479,12 @@ function RegisterPageInner() {
                 </div>
 
                 {/* ID document */}
-                {showIdDocument && <IdDocumentUpload />}
+                {showIdDocument && (
+                    <IdDocumentUpload
+                        required={requireIdDocument}
+                        onFilesChange={(front, back, docType) => setIdDoc({ front, back, docType })}
+                    />
+                )}
 
                 {status === 'error' && (
                     <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
