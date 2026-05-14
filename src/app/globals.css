@@ -122,6 +122,12 @@
   }
 }
 
+/* Embed mode — hide shell chrome for iframe integration */
+html.embed-mode header,
+html.embed-mode footer {
+  display: none !important;
+}
+
 /* Marketing Page Animations */
 @keyframes fade-in-up {
   from {

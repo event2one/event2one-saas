@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Calendar, MapPin, Users, ArrowRight, ChevronRight } from 'lucide-react'
 import { API_URL } from '@/utils/api'
+import { getEventTheme, primaryBgStyle } from '@/config/event-themes'
 
 const DIR_IMG = 'https://www.mlg-consulting.com/manager_cc/contacts/img_uploaded/'
 
@@ -62,6 +63,7 @@ async function getSpeakers(eventId: string): Promise<Partner[]> {
 export default async function EventHomePage({ params }: { params: Promise<{ eventId: string }> }) {
     const { eventId } = await params
     const [event, speakers] = await Promise.all([getEvent(eventId), getSpeakers(eventId)])
+    const theme = getEventTheme(eventId)
 
     if (!event) {
         return (
@@ -82,10 +84,10 @@ export default async function EventHomePage({ params }: { params: Promise<{ even
     return (
         <div className="min-h-screen bg-background">
             {/* Hero */}
-            <div className="bg-primary text-primary-foreground">
+            <div className="bg-primary text-primary-foreground" style={primaryBgStyle(theme)}>
                 <div className="max-w-4xl mx-auto px-6 py-16">
                     <p className="text-sm font-medium opacity-60 mb-2">event2one</p>
-                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4">{event.nom}</h1>
+                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight mb-4" style={{ color: '#fff' }}>{event.nom}</h1>
                     <div className="flex flex-wrap gap-5 text-sm opacity-75 mb-8">
                         {formattedDate && (
                             <span className="flex items-center gap-1.5">
@@ -189,6 +191,7 @@ export default async function EventHomePage({ params }: { params: Promise<{ even
                         <Link
                             href={`/events/${eventId}/register`}
                             className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                            style={primaryBgStyle(theme)}
                         >
                             S'inscrire maintenant <ArrowRight size={15} />
                         </Link>

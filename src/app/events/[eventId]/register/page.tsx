@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { API_URL } from '@/utils/api'
 import { IdDocumentUpload } from '@/components/id-document-upload'
+import ProgramGridSelector from '@/components/ProgramGridSelector'
 
 const LINKEDIN_CLIENT_ID = '78eqa2rddcgy4s'
 const LINKEDIN_SCOPE = 'openid profile email'
@@ -38,14 +39,48 @@ type LiProfile = {
     photo?: string
 }
 
+type EventContactType = {
+    id_event_contact_type: string
+    libelle: string
+}
+
 const LinkedInIcon = () => (
     <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white shrink-0">
         <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
     </svg>
 )
 
-export default function RegisterPage() {
+type EventConfig = {
+    showLinkedIn: boolean
+    showIdDocument: boolean
+    primaryColor?: string
+    primaryForeground?: string
+}
+
+const DEFAULT_CONFIG: EventConfig = {
+    showLinkedIn: true,
+    showIdDocument: false,
+}
+
+const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
+    '2273': { showLinkedIn: false, showIdDocument: true, primaryColor: '#170b7e', primaryForeground: '#d8cfc7' },
+}
+
+function RegisterPageInner() {
     const { eventId } = useParams<{ eventId: string }>()
+    const searchParams = useSearchParams()
+    const isEmbed = searchParams.get('embed') === '1'
+
+    const [showLinkedIn] = useState(() => ({ ...DEFAULT_CONFIG, ...EVENT_CONFIG[eventId] }).showLinkedIn)
+    const [showIdDocument] = useState(() => ({ ...DEFAULT_CONFIG, ...EVENT_CONFIG[eventId] }).showIdDocument)
+    const { primaryColor, primaryForeground } = { ...DEFAULT_CONFIG, ...EVENT_CONFIG[eventId] }
+
+    useEffect(() => {
+        if (isEmbed) {
+            document.documentElement.classList.add('embed-mode')
+        }
+        return () => { document.documentElement.classList.remove('embed-mode') }
+    }, [isEmbed])
 
     const [form, setForm] = useState<FormState>(
         () => Object.fromEntries(FIELDS.map(f => [f.key, ''])) as FormState
@@ -55,6 +90,24 @@ export default function RegisterPage() {
     const [liProfile, setLiProfile] = useState<LiProfile | null>(null)
     const [liLoading, setLiLoading] = useState(false)
     const [liError, setLiError] = useState('')
+
+    const [participationTypes, setParticipationTypes] = useState<EventContactType[]>([])
+    const [participationTypeId, setParticipationTypeId] = useState('')
+    const [selectedSessions, setSelectedSessions] = useState<string[]>([])
+
+    useEffect(() => {
+        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (143, 466, 467)')}`)
+            .then(r => r.json())
+            .then((data: EventContactType[]) => {
+                if (Array.isArray(data) && data.length > 0) {
+                    setParticipationTypes(data)
+                    setParticipationTypeId(data[0].id_event_contact_type)
+                }
+            })
+            .catch(() => {})
+    }, [])
+
+
     const popupRef = useRef<Window | null>(null)
 
     const handleChange = (key: FieldKey, value: string) =>
@@ -159,29 +212,46 @@ export default function RegisterPage() {
                     : contactData?.id_contact
             if (!id_contact) throw new Error('La création du contact a échoué.')
 
-            // 2. Create conf event slot
-            const ceRes = await fetch(`${API_URL}?action=createConfEvent`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_event: eventId }),
-            })
-            const id_conf_event = parseInt(JSON.parse(await ceRes.text()), 10)
-            if (!id_conf_event) throw new Error('La création du créneau a échoué.')
+            // 2. Register contact to each selected session (or create a generic slot if none selected)
+            if (selectedSessions.length > 0) {
+                // Register in each chosen session from the program grid
+                for (const id_conf_event of selectedSessions) {
+                    const confRes = await fetch(`${API_URL}?action=createConferencier`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id_contact, id_conf_event, statut: participationTypeId || 143, id_event: eventId }),
+                    })
+                    const confRaw = JSON.parse(await confRes.text())
+                    const id_conferencier =
+                        typeof confRaw === 'string' || typeof confRaw === 'number'
+                            ? parseInt(String(confRaw), 10)
+                            : confRaw?.id_conferencier
+                    if (!id_conferencier) throw new Error(`Inscription à la session ${id_conf_event} échouée.`)
+                }
+            } else {
+                // Fallback: create a generic slot and link the contact
+                const ceRes = await fetch(`${API_URL}?action=createConfEvent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_event: eventId }),
+                })
+                const id_conf_event = parseInt(JSON.parse(await ceRes.text()), 10)
+                if (!id_conf_event) throw new Error('La création du créneau a échoué.')
 
-            // 3. Link contact to slot
-            const confRes = await fetch(`${API_URL}?action=createConferencier`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_contact, id_conf_event, statut: 143, id_event: eventId }),
-            })
-            const confRaw = JSON.parse(await confRes.text())
-            const id_conferencier =
-                typeof confRaw === 'string' || typeof confRaw === 'number'
-                    ? parseInt(String(confRaw), 10)
-                    : confRaw?.id_conferencier
-            if (!id_conferencier) throw new Error("L'association contact/créneau a échoué.")
+                const confRes = await fetch(`${API_URL}?action=createConferencier`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_contact, id_conf_event, statut: participationTypeId || 143, id_event: eventId }),
+                })
+                const confRaw = JSON.parse(await confRes.text())
+                const id_conferencier =
+                    typeof confRaw === 'string' || typeof confRaw === 'number'
+                        ? parseInt(String(confRaw), 10)
+                        : confRaw?.id_conferencier
+                if (!id_conferencier) throw new Error("L'association contact/créneau a échoué.")
+            }
 
-            // 4. Create presta
+            // 3. Create presta
             await fetch(`${API_URL}?action=createPresta`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -208,12 +278,14 @@ export default function RegisterPage() {
                     <p className="text-muted-foreground text-sm">
                         Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
                     </p>
-                    <Link
-                        href={`/events/${eventId}`}
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-2"
-                    >
-                        <ArrowLeft size={14} /> Retour à l'événement
-                    </Link>
+                    {!isEmbed && (
+                        <Link
+                            href={`/events/${eventId}`}
+                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-2"
+                        >
+                            <ArrowLeft size={14} /> Retour à l&apos;événement
+                        </Link>
+                    )}
                 </div>
             </div>
         )
@@ -222,16 +294,18 @@ export default function RegisterPage() {
     // ─── Form ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-background px-4 py-12">
+        <div className={isEmbed ? 'bg-background px-4 py-8' : 'min-h-screen bg-background px-4 py-12'}>
             <div className="max-w-xl mx-auto space-y-6">
 
                 <div>
-                    <Link
-                        href={`/events/${eventId}`}
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
-                    >
-                        <ArrowLeft size={14} /> Retour
-                    </Link>
+                    {!isEmbed && (
+                        <Link
+                            href={`/events/${eventId}`}
+                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
+                        >
+                            <ArrowLeft size={14} /> Retour
+                        </Link>
+                    )}
                     <h1 className="text-2xl font-bold">Inscription</h1>
                     <p className="text-muted-foreground text-sm mt-1">
                         Enregistrez votre participation à cet événement.
@@ -239,7 +313,7 @@ export default function RegisterPage() {
                 </div>
 
                 {/* LinkedIn connect */}
-                {!liProfile ? (
+                {showLinkedIn && (!liProfile ? (
                     <div className="bg-card border rounded-2xl p-5 text-center space-y-4">
                         <div className="space-y-0.5">
                             <p className="text-sm font-semibold">Inscription rapide</p>
@@ -292,10 +366,7 @@ export default function RegisterPage() {
                             Déconnecter
                         </button>
                     </div>
-                )}
-
-                {/* ID document */}
-                <IdDocumentUpload />
+                ))}
 
                 {/* Form */}
                 <div className="bg-card border rounded-2xl p-6 md:p-8">
@@ -303,8 +374,28 @@ export default function RegisterPage() {
                         Remplissez le formulaire ci-dessous pour enregistrer votre demande.
                         Notre équipe vous recontactera pour confirmer votre participation.
                     </p>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form id="register-form" onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {participationTypes.length > 0 && (
+                                <div className="sm:col-span-2">
+                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                                        Type de participation
+                                        <span className="text-destructive">*</span>
+                                    </label>
+                                    <select
+                                        required
+                                        value={participationTypeId}
+                                        onChange={e => setParticipationTypeId(e.target.value)}
+                                        className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                                    >
+                                        {participationTypes.map(t => (
+                                            <option key={t.id_event_contact_type} value={t.id_event_contact_type}>
+                                                {t.libelle}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             {FIELDS.map((field) => {
                                 const { key, label, required, type } = field
                                 const placeholder = 'placeholder' in field ? field.placeholder : undefined
@@ -333,22 +424,51 @@ export default function RegisterPage() {
                             })}
                         </div>
 
-                        {status === 'error' && (
-                            <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
-                                {errorMsg}
-                            </p>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={status === 'submitting'}
-                            className="w-full py-3 text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-opacity disabled:opacity-50 mt-2"
-                        >
-                            {status === 'submitting' ? 'Envoi en cours…' : 'Confirmer mon inscription'}
-                        </button>
                     </form>
                 </div>
+
+                {/* Program grid */}
+                <div className="bg-card border rounded-2xl p-6 md:p-8 space-y-4">
+                    <div>
+                        <p className="text-sm font-semibold">Programme de l&apos;événement</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Sélectionnez les sessions auxquelles vous souhaitez participer.
+                        </p>
+                    </div>
+                    <ProgramGridSelector
+                        eventId={eventId}
+                        onSelectionChange={setSelectedSessions}
+                    />
+                </div>
+
+                {/* ID document */}
+                {showIdDocument && <IdDocumentUpload />}
+
+                {status === 'error' && (
+                    <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+                        {errorMsg}
+                    </p>
+                )}
+
+                <button
+                    type="submit"
+                    form="register-form"
+                    disabled={status === 'submitting'}
+                    style={primaryColor ? { backgroundColor: primaryColor, color: primaryForeground ?? '#ffffff' } : undefined}
+                    className="w-full py-3 text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-opacity disabled:opacity-50"
+                >
+                    {status === 'submitting' ? 'Envoi en cours…' : 'Confirmer mon inscription'}
+                </button>
+
             </div>
         </div>
+    )
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense>
+            <RegisterPageInner />
+        </Suspense>
     )
 }

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getManagerEvent } from '../../actions';
 import EditEventForm from './edit-event-form';
+import InscritsList from '@/components/InscritsList';
 
 export default async function EventEditPage({
     params,
@@ -48,6 +49,10 @@ export default async function EventEditPage({
             </div>
 
             <EditEventForm event={event} />
+
+            <div className="mt-8">
+                <InscritsList eventId={eventId} />
+            </div>
         </div>
     );
 }

@@ -1,7 +1,10 @@
 import { Calendar, MapPin } from 'lucide-react'
 import { API_URL } from '@/utils/api'
+import { getEventTheme } from '@/config/event-themes'
 
 const DIR_EVENT_IMG = 'https://www.mlg-consulting.com/manager_cc/docs/img_uploaded/'
+
+// ─── Charte graphique → voir src/config/event-themes.ts ─────────────────────
 
 type Lieu = {
     lieu_nom?: string
@@ -36,6 +39,11 @@ export default async function EventLayout({
 }) {
     const { eventId } = await params
     const event = await getEvent(eventId)
+    const theme = getEventTheme(eventId)
+
+    const googleFontUrl = theme.googleFont
+        ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(theme.googleFont)}:wght@400;700&display=swap`
+        : null
 
     const formattedDate = event?.date_debut
         ? new Date(event.date_debut).toLocaleDateString('fr-FR', {
@@ -59,6 +67,21 @@ export default async function EventLayout({
 
     return (
         <>
+            {googleFontUrl && (
+                <link rel="stylesheet" href={googleFontUrl} />
+            )}
+            {(theme.primaryColor || theme.primaryForeground || theme.googleFont) && (
+                <style>{`
+                    .event-theme {
+                        ${theme.primaryColor      ? `--color-primary: ${theme.primaryColor};` : ''}
+                        ${theme.primaryForeground ? `--color-primary-foreground: ${theme.primaryForeground};` : ''}
+                        ${theme.googleFont        ? `font-family: '${theme.googleFont}', ui-sans-serif, system-ui, sans-serif;` : ''}
+                    }
+                    ${theme.primaryColor ? `.event-theme, .event-theme h1, .event-theme h2, .event-theme h3, .event-theme p, .event-theme label, .event-theme span:not(.text-destructive), .event-theme input { color: ${theme.primaryColor}; }` : ''}
+                    ${theme.primaryColor ? `.event-theme .text-muted-foreground { color: ${theme.primaryColor}99; }` : ''}
+                `}</style>
+            )}
+            <div className="event-theme">
             <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
                 <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-4">
                     {/* Logo */}
@@ -108,6 +131,7 @@ export default async function EventLayout({
             </header>
 
             {children}
+            </div>
         </>
     )
 }
