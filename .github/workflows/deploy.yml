@@ -10,19 +10,28 @@ jobs:
     steps:
     - name: Deploy to Server via SSH
       uses: appleboy/ssh-action@master
+      env:
+        BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+        BADGE_TOKEN_SECRET: ${{ secrets.BADGE_TOKEN_SECRET }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+        LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.SSH_PORT || '22224' }}
+        envs: BETTER_AUTH_SECRET,BADGE_TOKEN_SECRET,DATABASE_URL,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,LINKEDIN_CLIENT_ID,LINKEDIN_CLIENT_SECRET
         script: |
           # Load nvm
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          
+
           # Use Node.js 20
           nvm use 20
-          
+
           # Navigate to project directory
           cd /var/www/e2o/event2one-saas
 
@@ -30,11 +39,23 @@ jobs:
           git fetch origin master
           git reset --hard origin/master
 
+          # Write .env from GitHub Secrets (recreated at every deploy)
+          {
+            echo "BETTER_AUTH_URL=https://www.event2one.com/saas"
+            echo "BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET"
+            echo "BADGE_TOKEN_SECRET=$BADGE_TOKEN_SECRET"
+            echo "DATABASE_URL=$DATABASE_URL"
+            echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
+            echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET"
+            echo "LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID"
+            echo "LINKEDIN_CLIENT_SECRET=$LINKEDIN_CLIENT_SECRET"
+          } > /var/www/e2o/event2one-saas/.env
+
           # Install dependencies
           npm install --legacy-peer-deps
 
           # Build Next.js app
           npm run build
 
-          # Restart PM2 process (restart is safer than reload for Next.js builds)
-          pm2 restart ecosystem.config.js
+          # Restart PM2 with updated env
+          pm2 restart ecosystem.config.js --update-env
