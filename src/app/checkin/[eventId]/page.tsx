@@ -314,7 +314,10 @@ export default function QrCheckinScanner() {
     }
 
     const openConfig = () => {
-        if (qrRef.current) qrRef.current.stop().catch(() => { })
+        if (qrRef.current) {
+            try { qrRef.current.stop().catch(() => { }) } catch { }
+            qrRef.current = null
+        }
         cooldownRef.current = false
         setPhase('config')
     }
@@ -367,12 +370,14 @@ export default function QrCheckinScanner() {
                 </div>
             )}
 
-            {/* Settings + network badges */}
-            {phase === 'scanning' && (
-                <div className="fixed top-4 right-4 z-20 flex flex-col items-end gap-2">
+            {/* Settings + network badges — z-index inline pour passer au-dessus des éléments html5-qrcode */}
+            {phase !== 'config' && (
+                <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 9999 }} className="flex flex-col items-end gap-2">
                     <button
+                        type="button"
                         onClick={openConfig}
-                        className="p-2 bg-black/50 backdrop-blur-sm rounded-xl text-white/70 hover:text-white"
+                        className="p-2 bg-black/60 backdrop-blur-sm rounded-xl text-white hover:bg-black/80 active:scale-95 transition-transform"
+                        style={{ pointerEvents: 'all' }}
                     >
                         <Settings size={20} />
                     </button>

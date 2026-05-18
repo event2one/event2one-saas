@@ -13,14 +13,19 @@ const LINKEDIN_SCOPE = 'openid profile email'
 const UPLOAD_API_URL = 'https://manager.event2one.com/videos/upload-to-youtube/upload_api.php'
 const UPLOAD_API_KEY = 'mgv_yt_upload_2026'
 
+
+
 const FIELDS = [
-    { key: 'prenom',      label: 'Prénom',                                 required: true,  type: 'text'  },
-    { key: 'nom',         label: 'Nom',                                    required: true,  type: 'text'  },
-    { key: 'societe',     label: 'Société',                                required: true,  type: 'text'  },
-    { key: 'fonction',    label: 'Fonction / Titre',                       required: false, type: 'text'  },
-    { key: 'mail',        label: 'Email',                                  required: true,  type: 'email' },
-    { key: 'port',        label: 'Mobile',                                 required: false, type: 'tel'   },
-    { key: 'sn_linkedin', label: 'Profil LinkedIn',                        required: false, type: 'url',  placeholder: 'https://www.linkedin.com/in/...' },
+    { key: 'prenom',         label: 'Prénom',                                 required: true,  type: 'text'  },
+    { key: 'nom',            label: 'Nom',                                    required: true,  type: 'text'  },
+    { key: 'societe',        label: 'Société',                                required: true,  type: 'text'  },
+    { key: 'fonction',       label: 'Fonction / Titre',                       required: false, type: 'text'  },
+    { key: 'mail',           label: 'Email',                                  required: true,  type: 'email' },
+    { key: 'port',           label: 'Mobile',                                 required: false, type: 'tel'   },
+    { key: 'date_naissance', label: 'Date de naissance',                      required: false, type: 'date'  },
+    { key: 'pays_naissance', label: 'Pays de naissance',                      required: false, type: 'text',  placeholder: 'Ex : France, Maroc, Italie…'  },
+    { key: 'ville_naissance',label: 'Ville de naissance',                     required: false, type: 'text',  placeholder: 'Ex : Paris, Casablanca, Rome…' },
+    { key: 'sn_linkedin',    label: 'Profil LinkedIn',                        required: false, type: 'url',  placeholder: 'https://www.linkedin.com/in/...' },
     //{ key: 'punchline',   label: 'Thème / Punchline de votre intervention',required: false, type: 'text', full: true },
 ] as const
 
@@ -55,6 +60,7 @@ type EventConfig = {
     showIdDocument: boolean
     requireIdDocument: boolean
     hiddenFields: FieldKey[]
+    requiredFields: FieldKey[]
     primaryColor?: string
     primaryForeground?: string
 }
@@ -63,7 +69,8 @@ const DEFAULT_CONFIG: EventConfig = {
     showLinkedIn: true,
     showIdDocument: false,
     requireIdDocument: false,
-    hiddenFields: [],
+    hiddenFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
+    requiredFields: [],
 }
 
 const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
@@ -71,7 +78,8 @@ const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
         showLinkedIn: false,
         showIdDocument: true,
         requireIdDocument: true,
-        hiddenFields: ['sn_linkedin', 'port','societe','fonction'],
+        hiddenFields: ['sn_linkedin', 'port', 'societe', 'fonction'],
+        requiredFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
         primaryColor: '#170b7e',
         primaryForeground: '#d8cfc7' },
 }
@@ -84,6 +92,7 @@ function RegisterPageInner() {
     const eventCfg = { ...DEFAULT_CONFIG, ...(EVENT_CONFIG[eventId] ?? {}) }
     const { showLinkedIn, showIdDocument, requireIdDocument, primaryColor, primaryForeground } = eventCfg
     const hiddenFields = new Set<string>(eventCfg.hiddenFields ?? [])
+    const requiredFields = new Set<string>(eventCfg.requiredFields ?? [])
 
     useEffect(() => {
         if (isEmbed) {
@@ -101,6 +110,7 @@ function RegisterPageInner() {
     const [liLoading, setLiLoading] = useState(false)
     const [liError, setLiError] = useState('')
 
+    const [countries, setCountries] = useState<string[]>([])
     const [participationTypes, setParticipationTypes] = useState<EventContactType[]>([])
     const [participationTypeId, setParticipationTypeId] = useState('')
     const [selectedSessions, setSelectedSessions] = useState<string[]>([])
@@ -109,6 +119,16 @@ function RegisterPageInner() {
     })
     const idDocRef = useRef(idDoc)
     idDocRef.current = idDoc
+
+    useEffect(() => {
+        fetch(`${API_URL}?action=getCountries`)
+            .then(r => r.json())
+            .then((data: unknown) => {
+                if (Array.isArray(data))
+                    setCountries(data.map((c: unknown) => typeof c === 'string' ? c : String((c as Record<string,unknown>).libelle ?? (c as Record<string,unknown>).name ?? c)))
+            })
+            .catch(() => {})
+    }, [])
 
     useEffect(() => {
         fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (143, 466, 467)')}`)
@@ -434,7 +454,8 @@ function RegisterPageInner() {
                                 </div>
                             )}
                             {FIELDS.filter(f => !hiddenFields.has(f.key)).map((field) => {
-                                const { key, label, required, type } = field
+                                const { key, label, type } = field
+                                const required = field.required || requiredFields.has(key)
                                 const placeholder = 'placeholder' in field ? field.placeholder : undefined
                                 const full = 'full' in field ? (field as { full?: boolean }).full : false
                                 return (
@@ -454,8 +475,14 @@ function RegisterPageInner() {
                                         placeholder={placeholder ?? ''}
                                         value={form[key]}
                                         onChange={e => handleChange(key, e.target.value)}
+                                        list={key === 'pays_naissance' ? 'pays-naissance-list' : undefined}
                                         className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                                     />
+                                    {key === 'pays_naissance' && (
+                                        <datalist id="pays-naissance-list">
+                                            {countries.map(c => <option key={c} value={c} />)}
+                                        </datalist>
+                                    )}
                                 </div>
                                 )
                             })}
