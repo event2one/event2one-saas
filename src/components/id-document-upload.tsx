@@ -49,7 +49,7 @@ function IdCardSlot({
 
     const accept = (files: FileList | null) => {
         const f = files?.[0]
-        if (f && (f.type.startsWith('image/') || f.type === 'application/pdf')) onFile(f)
+        if (f && (f.type === 'image/jpeg' || f.type === 'image/png')) onFile(f)
     }
 
     const { title, hint } = SLOT_LABELS[docType][side] ?? { title: side, hint: '' }
@@ -95,7 +95,7 @@ function IdCardSlot({
                             <p className="text-[11px] font-medium text-muted-foreground leading-tight">
                                 Glissez ou cliquez
                             </p>
-                            <p className="text-[10px] text-muted-foreground/50">JPG · PNG · PDF</p>
+                            <p className="text-[10px] text-muted-foreground/50">JPG · PNG</p>
                         </div>
                         <div className="flex gap-1.5">
                             <button
@@ -113,7 +113,7 @@ function IdCardSlot({
                                 <input
                                     ref={camRef}
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/jpeg,image/png"
                                     capture="environment"
                                     className="sr-only"
                                     onChange={e => accept(e.target.files)}
@@ -183,7 +183,7 @@ function IdCardSlot({
             </div>
 
             {/* Hidden file inputs */}
-            <input ref={fileRef} type="file" accept="image/*,.pdf" className="sr-only" onChange={e => accept(e.target.files)} />
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png" className="sr-only" onChange={e => accept(e.target.files)} />
         </div>
     )
 }

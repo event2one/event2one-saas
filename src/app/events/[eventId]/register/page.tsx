@@ -463,10 +463,14 @@ function RegisterPageInner() {
                             <ArrowLeft size={14} /> Retour
                         </Link>
                     )}
-                    <h1 className="text-2xl font-bold">Inscription</h1>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        Enregistrez votre participation à cet événement.
-                    </p>
+                    {!isEmbed && (
+                        <>
+                            <h1 className="text-2xl font-bold">Inscription</h1>
+                            <p className="text-muted-foreground text-sm mt-1">
+                                Enregistrez votre participation à cet événement.
+                            </p>
+                        </>
+                    )}
                 </div>
 
                 {/* LinkedIn connect */}
