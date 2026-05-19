@@ -630,7 +630,7 @@ function RegisterPageInner() {
                 </button>
 
                 {/* Mention CNIL */}
-                <div className="text-xs text-muted-foreground leading-relaxed border-t pt-4 space-y-2">
+                <div className="text-[13px] text-muted-foreground leading-relaxed border-t pt-4 space-y-2">
                     <p>
                         Les données récoltées par ce formulaire sont destinées à la Région Hauts-de-France et au CITC et sont traitées dans le cadre de l&apos;organisation du Grand Sommet IA avec NOUS, le 12 juin 2026 à Lille.
                     </p>
