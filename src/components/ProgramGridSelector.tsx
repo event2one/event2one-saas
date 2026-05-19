@@ -36,6 +36,8 @@ export interface ProgramGridSelectorProps {
     onSessionRegistered?: (id_conf_event: string, id_conferencier: number) => void
     /** If false, only single selection is allowed */
     multiSelect?: boolean
+    /** Show capacity gauge bar on each session card (default: false) */
+    showGauge?: boolean
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -84,6 +86,7 @@ export default function ProgramGridSelector({
     onSelectionChange,
     onSessionRegistered,
     multiSelect = true,
+    showGauge = false,
 }: ProgramGridSelectorProps) {
     const [sessions, setSessions] = useState<ConfEventLight[]>([])
     const [loading, setLoading] = useState(true)
@@ -280,8 +283,8 @@ export default function ProgramGridSelector({
                                         )}
                                     </div>
 
-                                    {/* Capacity gauge — only when capacite is set */}
-                                    {cap > 0 && (
+                                    {/* Capacity gauge — only when capacite is set and showGauge is enabled */}
+                                    {showGauge && cap > 0 && (
                                         <div className="mt-2.5 space-y-0.5">
                                             <div className="h-1 rounded-full bg-muted overflow-hidden">
                                                 <div
