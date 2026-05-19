@@ -163,7 +163,7 @@ const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
             signatureName: 'L\'équipe IA Avec Nous',
             ctaUrl: 'https://ia-avecnous.fr/grand-sommet/',
             ctaLabel: 'Plus d\'informations',
-            hideBadgeCta: true,
+            hideBadgeCta: false,
         },
     },
 }
