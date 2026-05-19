@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
+import { EVENT_CONFIG } from '@/config/events'
 
 const API_URL = 'https://www.mlg-consulting.com/smart_territory/form/api.php'
 const DIR_IMG = '//www.mlg-consulting.com/manager_cc/contacts/img_uploaded/'
@@ -91,15 +92,18 @@ export default function PrintBadgePage() {
         </div>
     )
 
-    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} />
+    const badgeCfg = EVENT_CONFIG[eventId] ?? {}
+    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} />
 }
 
-function BadgeA4({ c, event, eventId, accent, qrData }: {
+function BadgeA4({ c, event, eventId, accent, qrData, headerImageUrl, footerImageUrl }: {
     c: Contact
     event: EventData | null
     eventId: string
     accent: string
     qrData?: string
+    headerImageUrl?: string
+    footerImageUrl?: string
 }) {
     const fullName = `${c.prenom} ${c.nom}`.toUpperCase()
     const society = (c.societe || '').toUpperCase()
@@ -173,10 +177,13 @@ function BadgeA4({ c, event, eventId, accent, qrData }: {
 
                 {/* TR — FACE VISIBLE */}
                 <div style={{ ...zone, borderBottom: '1px dashed #bbb', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ background: accent, color: '#fff', padding: '3.5mm 5mm', textAlign: 'center' }}>
-                        <div style={{ fontSize: '8pt', fontWeight: 900, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{eventName}</div>
-                        {eventDate && <div style={{ fontSize: '6.5pt', opacity: 0.85, marginTop: '0.5mm' }}>{eventDate}</div>}
-                    </div>
+                    {headerImageUrl
+                        ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={headerImageUrl} alt="" style={{ width: '105mm', display: 'block' }} />
+                        : <div style={{ background: accent, color: '#fff', padding: '3.5mm 5mm', textAlign: 'center' }}>
+                            <div style={{ fontSize: '8pt', fontWeight: 900, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{eventName}</div>
+                            {eventDate && <div style={{ fontSize: '6.5pt', opacity: 0.85, marginTop: '0.5mm' }}>{eventDate}</div>}
+                        </div>
+                    }
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5mm 6mm', gap: '3mm', textAlign: 'center' }}>
                         {c.photo
                             ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={`${DIR_IMG}${c.photo}`} alt="" style={{ width: '24mm', height: '24mm', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${accent}` }} />
@@ -191,9 +198,12 @@ function BadgeA4({ c, event, eventId, accent, qrData }: {
                         <img src={qrCheckin} alt="QR" style={{ width: '30mm', height: '30mm', marginTop: '2mm' }} />
                         <div style={{ fontSize: '6.5pt', color: '#999' }}>Scanner pour accéder au profil</div>
                     </div>
-                    <div style={{ background: accent, color: '#fff', textAlign: 'center', fontWeight: 900, fontSize: '15pt', padding: '3.5mm', letterSpacing: '2px' }}>
-                        PARTICIPANT
-                    </div>
+                    {footerImageUrl
+                        ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={footerImageUrl} alt="" style={{ width: '105mm', display: 'block' }} />
+                        : <div style={{ background: accent, color: '#fff', textAlign: 'center', fontWeight: 900, fontSize: '15pt', padding: '3.5mm', letterSpacing: '2px' }}>
+                            PARTICIPANT
+                        </div>
+                    }
                 </div>
 
                 {/* BL — instructions (rot 180°) */}

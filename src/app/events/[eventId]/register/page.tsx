@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { API_URL } from '@/utils/api'
 import { IdDocumentUpload, type DocumentType } from '@/components/id-document-upload'
 import ProgramGridSelector from '@/components/ProgramGridSelector'
+import { type EventConfig, EVENT_CONFIG } from '@/config/events'
 
 const LINKEDIN_CLIENT_ID = '78eqa2rddcgy4s'
 const LINKEDIN_SCOPE = 'openid profile email'
@@ -54,30 +55,6 @@ const LinkedInIcon = () => (
         <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
     </svg>
 )
-
-type EventConfig = {
-    showLinkedIn: boolean
-    showIdDocument: boolean
-    requireIdDocument: boolean
-    hiddenFields: FieldKey[]
-    requiredFields: FieldKey[]
-    primaryColor?: string
-    primaryForeground?: string
-    confirmationMessage?: string
-    headerImageUrl?: string
-    footerImageUrl?: string
-    email?: {
-        subject: string
-        logoUrl?: string
-        eventName?: string
-        introText?: string
-        contactEmail?: string
-        signatureName?: string
-        ctaUrl?: string
-        ctaLabel?: string
-        hideBadgeCta?: boolean
-    }
-}
 
 function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: string | null): string {
     const color = cfg.primaryColor ?? '#1a56db'
@@ -152,30 +129,6 @@ const DEFAULT_CONFIG: EventConfig = {
     requireIdDocument: false,
     hiddenFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
     requiredFields: [],
-}
-
-const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
-    '2273': {
-        showLinkedIn: false,
-        showIdDocument: true,
-        requireIdDocument: true,
-        hiddenFields: ['sn_linkedin', 'port', 'societe', 'fonction'],
-        requiredFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
-        primaryColor: '#170b7e',
-        primaryForeground: '#d8cfc7',
-        confirmationMessage: 'Nous vous remercions de votre intérêt pour le Grand Sommet IA Avec Nous.\n\nUn email de confirmation vient de vous être envoyé avec les prochaines étapes et les informations relatives au Grand Sommet IA Avec Nous.',
-        headerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_ia-avec-nous-rs-mailing-bandeau-01.png',
-        footerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_footer.png',
-        email: {
-            subject: 'Confirmation de votre inscription – Grand Sommet IA Avec Nous',
-            eventName: 'Grand Sommet IA Avec Nous',
-            introText: 'Votre inscription au « Grand Sommet IA Avec Nous » a bien été prise en compte.\n\nCe rendez-vous réunira décideurs, experts, entrepreneurs et acteurs de l\'innovation autour des grandes transformations liées à l\'intelligence artificielle.\n\nVotre demande d\'inscription est désormais enregistrée.',
-            signatureName: 'L\'équipe IA Avec Nous',
-            ctaUrl: 'https://ia-avecnous.fr/grand-sommet/',
-            ctaLabel: 'Plus d\'informations',
-            hideBadgeCta: false,
-        },
-    },
 }
 
 function RegisterPageInner() {
