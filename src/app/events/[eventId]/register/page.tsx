@@ -63,12 +63,17 @@ type EventConfig = {
     requiredFields: FieldKey[]
     primaryColor?: string
     primaryForeground?: string
+    confirmationMessage?: string
     email?: {
         subject: string
         logoUrl?: string
         eventName?: string
         introText?: string
         contactEmail?: string
+        signatureName?: string
+        ctaUrl?: string
+        ctaLabel?: string
+        hideBadgeCta?: boolean
     }
 }
 
@@ -78,6 +83,28 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
     const eventName = cfg.email?.eventName ?? 'l\'événement'
     const intro = cfg.email?.introText ?? `Nous avons bien reçu votre inscription à ${eventName} et nous vous en remercions.`
     const contactEmail = cfg.email?.contactEmail ?? 'contact@mlg-consulting.com'
+    const signatureName = cfg.email?.signatureName ?? 'Notre équipe'
+    const hideBadgeCta = cfg.email?.hideBadgeCta ?? false
+    const ctaUrl = cfg.email?.ctaUrl
+    const ctaLabel = cfg.email?.ctaLabel ?? 'En savoir plus'
+
+    const introParagraphs = intro.split('\n\n')
+        .map(p => `<p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6">${p.replace(/\n/g, '<br>')}</p>`)
+        .join('')
+
+    const ctaBlock = !hideBadgeCta && badgeUrl ? `
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;margin-bottom:28px">
+            <tr><td style="padding:24px;text-align:center">
+              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#374151">Votre e-badge personnalisé</p>
+              <p style="margin:0 0 16px;font-size:13px;color:#6b7280">Imprimez votre badge A4 pliable à glisser dans votre porte-badge.</p>
+              <a href="${badgeUrl}" style="display:inline-block;background:${color};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:8px">Imprimer mon badge</a>
+            </td></tr>
+          </table>` : ctaUrl ? `
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+            <tr><td style="text-align:center">
+              <a href="${ctaUrl}" style="display:inline-block;background:${color};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:8px">${ctaLabel}</a>
+            </td></tr>
+          </table>` : ''
 
     return `<!DOCTYPE html>
 <html lang="fr">
@@ -94,30 +121,10 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
         <!-- Body -->
         <tr><td style="padding:40px">
           <p style="margin:0 0 16px;font-size:15px;color:#374151">Bonjour <strong>${form.prenom} ${form.nom}</strong>,</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6">${intro}</p>
-          <!-- Récap -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:8px;overflow:hidden;margin-bottom:32px">
-            <tr><td style="padding:20px 24px">
-              <p style="margin:0 0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280">Récapitulatif</p>
-              ${form.societe  ? `<p style="margin:0 0 6px;font-size:14px;color:#374151"><strong>Société&nbsp;:</strong> ${form.societe}</p>`  : ''}
-              ${form.fonction ? `<p style="margin:0 0 6px;font-size:14px;color:#374151"><strong>Fonction&nbsp;:</strong> ${form.fonction}</p>` : ''}
-              <p style="margin:0 0 6px;font-size:14px;color:#374151"><strong>Email&nbsp;:</strong> ${form.mail}</p>
-              ${form.port ? `<p style="margin:0;font-size:14px;color:#374151"><strong>Mobile&nbsp;:</strong> ${form.port}</p>` : ''}
-            </td></tr>
-          </table>
-          <!-- Badge CTA -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;margin-bottom:28px">
-            <tr><td style="padding:24px;text-align:center">
-              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#374151">Votre e-badge personnalisé</p>
-              <p style="margin:0 0 16px;font-size:13px;color:#6b7280">Imprimez votre badge A4 pliable à glisser dans votre porte-badge.</p>
-              <a href="${badgeUrl}" style="display:inline-block;background:${color};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:8px">
-                Imprimer mon badge
-              </a>
-            </td></tr>
-          </table>
+          ${introParagraphs}
+          ${ctaBlock}
           <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6">
-            Notre équipe vous recontactera prochainement pour confirmer les détails de votre participation.<br>
-            Pour toute question, contactez-nous à <a href="mailto:${contactEmail}" style="color:${color}">${contactEmail}</a>.
+            Bien cordialement,<br><strong>${signatureName}</strong>${contactEmail ? `<br><a href="mailto:${contactEmail}" style="color:${color}">${contactEmail}</a>` : ''}
           </p>
         </td></tr>
         <!-- Footer -->
@@ -148,10 +155,15 @@ const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
         requiredFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
         primaryColor: '#170b7e',
         primaryForeground: '#d8cfc7',
+        confirmationMessage: 'Nous vous remercions de votre intérêt pour le Grand Sommet IA Avec Nous.\n\nUn email de confirmation vient de vous être envoyé avec les prochaines étapes et les informations relatives au Grand Sommet IA Avec Nous.',
         email: {
-            subject: 'Confirmation de votre inscription',
-            eventName: 'l\'événement',
-            contactEmail: 'contact@mlg-consulting.com',
+            subject: 'Confirmation de votre inscription – Grand Sommet IA Avec Nous',
+            eventName: 'Grand Sommet IA Avec Nous',
+            introText: 'Votre inscription au « Grand Sommet IA Avec Nous » a bien été prise en compte.\n\nCe rendez-vous réunira décideurs, experts, entrepreneurs et acteurs de l\'innovation autour des grandes transformations liées à l\'intelligence artificielle.\n\nVotre demande d\'inscription est désormais enregistrée.',
+            signatureName: 'L\'équipe IA Avec Nous',
+            ctaUrl: 'https://ia-avecnous.fr/grand-sommet/',
+            ctaLabel: 'Plus d\'informations',
+            hideBadgeCta: true,
         },
     },
 }
@@ -432,9 +444,17 @@ function RegisterPageInner() {
                         <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
                     </div>
                     <h1 className="text-xl font-bold">Inscription confirmée !</h1>
-                    <p className="text-muted-foreground text-sm">
-                        Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
-                    </p>
+                    {eventCfg.confirmationMessage ? (
+                        <div className="text-muted-foreground text-sm space-y-2 text-left">
+                            {eventCfg.confirmationMessage.split('\n\n').map((p, i) => (
+                                <p key={i}>{p}</p>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-sm">
+                            Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
+                        </p>
+                    )}
                     {!isEmbed && (
                         <Link
                             href={`/events/${eventId}`}
@@ -532,7 +552,7 @@ function RegisterPageInner() {
                 {/* Form */}
                 <div className="bg-card border rounded-2xl p-6 md:p-8">
                     <p className="text-sm text-muted-foreground mb-6">
-                        Remplissez le formulaire ci-dessous pour enregistrer votre demande.
+                        Remplissez le formulaire ci-dessous pour enregistrer votre inscription.
                         Notre équipe vous recontactera pour confirmer votre participation.
                     </p>
                     <form id="register-form" onSubmit={handleSubmit} className="space-y-4">
