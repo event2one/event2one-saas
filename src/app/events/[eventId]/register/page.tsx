@@ -630,24 +630,22 @@ function RegisterPageInner() {
                 </button>
 
                 {/* Mention CNIL */}
-                <div className="text-[11px] text-muted-foreground leading-relaxed border-t pt-4 space-y-1.5">
-                    <p className="font-semibold text-xs">Informations relatives à la protection de vos données personnelles</p>
+                <div className="text-[11px] text-muted-foreground leading-relaxed border-t pt-4 space-y-2">
                     <p>
-                        <span className="font-medium">Responsable de traitement&nbsp;:</span> MLG Consulting — pour toute demande&nbsp;:{' '}
-                        <a href="mailto:information@mlg-consulting.com" className="underline hover:text-foreground">information@mlg-consulting.com</a>
+                        Les données récoltées par ce formulaire sont destinées à la Région Hauts-de-France et au CITC et sont traitées dans le cadre de l&apos;organisation du Grand Sommet IA avec NOUS, le 12 juin 2026 à Lille.
                     </p>
                     <p>
-                        <span className="font-medium">Finalité&nbsp;:</span> Les données collectées dans ce formulaire sont utilisées exclusivement dans le cadre de la gestion des inscriptions à cet événement (identification des participants, organisation logistique, communication relative à l&apos;événement).
+                        Elles seront conservées pour une durée de 3 mois à compter de la fin de l&apos;événement auquel vous vous êtes inscrit.
                     </p>
                     <p>
-                        <span className="font-medium">Pertinence&nbsp;:</span> Seules les données strictement nécessaires à votre inscription sont demandées. Les champs marqués d&apos;un <span className="text-destructive font-bold">*</span> sont obligatoires ; les autres sont facultatifs.
+                        Vous disposez d&apos;un droit d&apos;accès, de rectification, d&apos;effacement de vos données, de limitation du traitement ou, pour des motifs légitimes, vous opposer au traitement de ces données.
+                        Vous pouvez exercer ces droits auprès de{' '}
+                        <a href="mailto:web@hautsdefrance.fr" className="underline hover:text-foreground">web@hautsdefrance.fr</a>
+                        {' '}ou en contactant le Délégué à la protection des données (DPO) de la Région Hauts-de-France dont les coordonnées sont disponibles sur{' '}
+                        <a href="https://www.hautsdefrance.fr/informatique-et-libertes" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">https://www.hautsdefrance.fr/informatique-et-libertes</a>
                     </p>
                     <p>
-                        <span className="font-medium">Durée de conservation&nbsp;:</span> Vos données sont conservées pendant la durée de l&apos;événement et jusqu&apos;à 3 ans après sa clôture, conformément aux obligations légales en vigueur.
-                    </p>
-                    <p>
-                        <span className="font-medium">Vos droits&nbsp;:</span> Conformément au RGPD et à la loi Informatique et Libertés, vous disposez d&apos;un droit d&apos;accès, de rectification, d&apos;effacement, d&apos;opposition et de portabilité de vos données. Pour exercer ces droits, contactez&nbsp;:{' '}
-                        <a href="mailto:information@mlg-consulting.com" className="underline hover:text-foreground">information@mlg-consulting.com</a>. Vous pouvez également introduire une réclamation auprès de la{' '}
+                        Si, après avoir contacté le DPO, vous estimez que vos droits Informatiques &amp; Libertés ne sont pas respectés ou que le traitement n&apos;est pas conforme aux règles de protection des données, vous pouvez adresser une réclamation auprès de la{' '}
                         <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">CNIL</a>.
                     </p>
                 </div>
