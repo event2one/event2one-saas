@@ -64,6 +64,8 @@ type EventConfig = {
     primaryColor?: string
     primaryForeground?: string
     confirmationMessage?: string
+    headerImageUrl?: string
+    footerImageUrl?: string
     email?: {
         subject: string
         logoUrl?: string
@@ -80,6 +82,8 @@ type EventConfig = {
 function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: string | null): string {
     const color = cfg.primaryColor ?? '#1a56db'
     const logo = cfg.email?.logoUrl
+    const headerImageUrl = cfg.headerImageUrl
+    const footerImageUrl = cfg.footerImageUrl
     const eventName = cfg.email?.eventName ?? 'l\'événement'
     const intro = cfg.email?.introText ?? `Nous avons bien reçu votre inscription à ${eventName} et nous vous en remercions.`
     const contactEmail = cfg.email?.contactEmail ?? 'contact@mlg-consulting.com'
@@ -114,10 +118,12 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
         <!-- Header -->
-        <tr><td style="background:${color};padding:32px 40px;text-align:center">
+        ${headerImageUrl
+            ? `<tr><td style="padding:0;line-height:0"><img src="${headerImageUrl}" alt="" width="600" style="width:100%;max-width:600px;display:block"></td></tr>`
+            : `<tr><td style="background:${color};padding:32px 40px;text-align:center">
           ${logo ? `<img src="${logo}" alt="" style="max-height:60px;max-width:200px;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto">` : ''}
           <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700">Inscription confirmée</h1>
-        </td></tr>
+        </td></tr>`}
         <!-- Body -->
         <tr><td style="padding:40px">
           <p style="margin:0 0 16px;font-size:15px;color:#374151">Bonjour <strong>${form.prenom} ${form.nom}</strong>,</p>
@@ -128,9 +134,11 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
           </p>
         </td></tr>
         <!-- Footer -->
-        <tr><td style="padding:20px 40px;border-top:1px solid #e5e7eb;text-align:center">
+        ${footerImageUrl
+            ? `<tr><td style="padding:0;line-height:0"><img src="${footerImageUrl}" alt="" width="600" style="width:100%;max-width:600px;display:block"></td></tr>`
+            : `<tr><td style="padding:20px 40px;border-top:1px solid #e5e7eb;text-align:center">
           <p style="margin:0;font-size:11px;color:#9ca3af">Cet email vous a été envoyé suite à votre inscription à ${eventName}.<br>Powered by <strong>event2one</strong></p>
-        </td></tr>
+        </td></tr>`}
       </table>
     </td></tr>
   </table>
@@ -156,6 +164,8 @@ const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
         primaryColor: '#170b7e',
         primaryForeground: '#d8cfc7',
         confirmationMessage: 'Nous vous remercions de votre intérêt pour le Grand Sommet IA Avec Nous.\n\nUn email de confirmation vient de vous être envoyé avec les prochaines étapes et les informations relatives au Grand Sommet IA Avec Nous.',
+        headerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_ia-avec-nous-rs-mailing-bandeau-01.png',
+        footerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_footer.png',
         email: {
             subject: 'Confirmation de votre inscription – Grand Sommet IA Avec Nous',
             eventName: 'Grand Sommet IA Avec Nous',
@@ -439,29 +449,37 @@ function RegisterPageInner() {
     if (status === 'done') {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center px-4">
-                <div className="bg-card border rounded-2xl max-w-md w-full p-8 text-center space-y-4">
-                    <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
-                        <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h1 className="text-xl font-bold">Inscription confirmée !</h1>
-                    {eventCfg.confirmationMessage ? (
-                        <div className="text-muted-foreground text-sm space-y-2 text-left">
-                            {eventCfg.confirmationMessage.split('\n\n').map((p, i) => (
-                                <p key={i}>{p}</p>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground text-sm">
-                            Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
-                        </p>
+                <div className="bg-card border rounded-2xl max-w-md w-full overflow-hidden text-center">
+                    {eventCfg.headerImageUrl && (
+                        <img src={eventCfg.headerImageUrl} alt="" className="w-full block" />
                     )}
-                    {!isEmbed && (
-                        <Link
-                            href={`/events/${eventId}`}
-                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-2"
-                        >
-                            <ArrowLeft size={14} /> Retour à l&apos;événement
-                        </Link>
+                    <div className="px-8 py-6 space-y-4">
+                        <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
+                            <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
+                        </div>
+                        <h1 className="text-xl font-bold">Inscription confirmée !</h1>
+                        {eventCfg.confirmationMessage ? (
+                            <div className="text-muted-foreground text-sm space-y-2 text-left">
+                                {eventCfg.confirmationMessage.split('\n\n').map((p, i) => (
+                                    <p key={i}>{p}</p>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-sm">
+                                Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
+                            </p>
+                        )}
+                        {!isEmbed && (
+                            <Link
+                                href={`/events/${eventId}`}
+                                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-2"
+                            >
+                                <ArrowLeft size={14} /> Retour à l&apos;événement
+                            </Link>
+                        )}
+                    </div>
+                    {eventCfg.footerImageUrl && (
+                        <img src={eventCfg.footerImageUrl} alt="" className="w-full block" />
                     )}
                 </div>
             </div>
