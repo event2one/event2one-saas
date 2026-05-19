@@ -63,6 +63,72 @@ type EventConfig = {
     requiredFields: FieldKey[]
     primaryColor?: string
     primaryForeground?: string
+    email?: {
+        subject: string
+        logoUrl?: string
+        eventName?: string
+        introText?: string
+        contactEmail?: string
+    }
+}
+
+function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: string | null): string {
+    const color = cfg.primaryColor ?? '#1a56db'
+    const logo = cfg.email?.logoUrl
+    const eventName = cfg.email?.eventName ?? 'l\'événement'
+    const intro = cfg.email?.introText ?? `Nous avons bien reçu votre inscription à ${eventName} et nous vous en remercions.`
+    const contactEmail = cfg.email?.contactEmail ?? 'contact@mlg-consulting.com'
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+        <!-- Header -->
+        <tr><td style="background:${color};padding:32px 40px;text-align:center">
+          ${logo ? `<img src="${logo}" alt="" style="max-height:60px;max-width:200px;margin-bottom:16px;display:block;margin-left:auto;margin-right:auto">` : ''}
+          <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700">Inscription confirmée</h1>
+        </td></tr>
+        <!-- Body -->
+        <tr><td style="padding:40px">
+          <p style="margin:0 0 16px;font-size:15px;color:#374151">Bonjour <strong>${form.prenom} ${form.nom}</strong>,</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#374151;line-height:1.6">${intro}</p>
+          <!-- Récap -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:8px;overflow:hidden;margin-bottom:32px">
+            <tr><td style="padding:20px 24px">
+              <p style="margin:0 0 12px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280">Récapitulatif</p>
+              ${form.societe  ? `<p style="margin:0 0 6px;font-size:14px;color:#374151"><strong>Société&nbsp;:</strong> ${form.societe}</p>`  : ''}
+              ${form.fonction ? `<p style="margin:0 0 6px;font-size:14px;color:#374151"><strong>Fonction&nbsp;:</strong> ${form.fonction}</p>` : ''}
+              <p style="margin:0 0 6px;font-size:14px;color:#374151"><strong>Email&nbsp;:</strong> ${form.mail}</p>
+              ${form.port ? `<p style="margin:0;font-size:14px;color:#374151"><strong>Mobile&nbsp;:</strong> ${form.port}</p>` : ''}
+            </td></tr>
+          </table>
+          <!-- Badge CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;margin-bottom:28px">
+            <tr><td style="padding:24px;text-align:center">
+              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#374151">Votre e-badge personnalisé</p>
+              <p style="margin:0 0 16px;font-size:13px;color:#6b7280">Imprimez votre badge A4 pliable à glisser dans votre porte-badge.</p>
+              <a href="${badgeUrl}" style="display:inline-block;background:${color};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:8px">
+                Imprimer mon badge
+              </a>
+            </td></tr>
+          </table>
+          <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6">
+            Notre équipe vous recontactera prochainement pour confirmer les détails de votre participation.<br>
+            Pour toute question, contactez-nous à <a href="mailto:${contactEmail}" style="color:${color}">${contactEmail}</a>.
+          </p>
+        </td></tr>
+        <!-- Footer -->
+        <tr><td style="padding:20px 40px;border-top:1px solid #e5e7eb;text-align:center">
+          <p style="margin:0;font-size:11px;color:#9ca3af">Cet email vous a été envoyé suite à votre inscription à ${eventName}.<br>Powered by <strong>event2one</strong></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
 }
 
 const DEFAULT_CONFIG: EventConfig = {
@@ -81,7 +147,13 @@ const EVENT_CONFIG: Record<string, Partial<EventConfig>> = {
         hiddenFields: ['sn_linkedin', 'port', 'societe', 'fonction'],
         requiredFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
         primaryColor: '#170b7e',
-        primaryForeground: '#d8cfc7' },
+        primaryForeground: '#d8cfc7',
+        email: {
+            subject: 'Confirmation de votre inscription',
+            eventName: 'l\'événement',
+            contactEmail: 'contact@mlg-consulting.com',
+        },
+    },
 }
 
 function RegisterPageInner() {
@@ -315,6 +387,34 @@ function RegisterPageInner() {
                 await uploadVisuel(doc.back, 'id_card_verso')
             }
 
+            // 5. Send confirmation email (fire-and-forget — ne bloque pas l'inscription)
+            if (form.mail && eventCfg.email) {
+                ;(async () => {
+                    let badgeUrl: string | null = null
+                    try {
+                        const tokenRes = await fetch('/saas/api/badge/token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id_event: eventId, id_contact: String(id_contact) }),
+                        })
+                        const tokenData = await tokenRes.json()
+                        if (tokenData.token) {
+                            badgeUrl = `${window.location.origin}/saas/print/badge/${eventId}?t=${encodeURIComponent(tokenData.token)}`
+                        }
+                    } catch { /* badge URL optionnelle */ }
+
+                    fetch(`${API_URL}?action=sendEmailNotification`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            dest: form.mail,
+                            subject: eventCfg.email!.subject,
+                            body: buildConfirmationHtml(eventCfg, form, badgeUrl),
+                        }),
+                    }).catch(() => {})
+                })()
+            }
+
             setStatus('done')
         } catch (err) {
             setErrorMsg(err instanceof Error ? err.message : 'Une erreur est survenue.')
@@ -528,6 +628,29 @@ function RegisterPageInner() {
                 >
                     {status === 'submitting' ? 'Envoi en cours…' : 'Confirmer mon inscription'}
                 </button>
+
+                {/* Mention CNIL */}
+                <div className="text-[11px] text-muted-foreground leading-relaxed border-t pt-4 space-y-1.5">
+                    <p className="font-semibold text-xs">Informations relatives à la protection de vos données personnelles</p>
+                    <p>
+                        <span className="font-medium">Responsable de traitement&nbsp;:</span> MLG Consulting — pour toute demande&nbsp;:{' '}
+                        <a href="mailto:information@mlg-consulting.com" className="underline hover:text-foreground">information@mlg-consulting.com</a>
+                    </p>
+                    <p>
+                        <span className="font-medium">Finalité&nbsp;:</span> Les données collectées dans ce formulaire sont utilisées exclusivement dans le cadre de la gestion des inscriptions à cet événement (identification des participants, organisation logistique, communication relative à l&apos;événement).
+                    </p>
+                    <p>
+                        <span className="font-medium">Pertinence&nbsp;:</span> Seules les données strictement nécessaires à votre inscription sont demandées. Les champs marqués d&apos;un <span className="text-destructive font-bold">*</span> sont obligatoires ; les autres sont facultatifs.
+                    </p>
+                    <p>
+                        <span className="font-medium">Durée de conservation&nbsp;:</span> Vos données sont conservées pendant la durée de l&apos;événement et jusqu&apos;à 3 ans après sa clôture, conformément aux obligations légales en vigueur.
+                    </p>
+                    <p>
+                        <span className="font-medium">Vos droits&nbsp;:</span> Conformément au RGPD et à la loi Informatique et Libertés, vous disposez d&apos;un droit d&apos;accès, de rectification, d&apos;effacement, d&apos;opposition et de portabilité de vos données. Pour exercer ces droits, contactez&nbsp;:{' '}
+                        <a href="mailto:information@mlg-consulting.com" className="underline hover:text-foreground">information@mlg-consulting.com</a>. Vous pouvez également introduire une réclamation auprès de la{' '}
+                        <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">CNIL</a>.
+                    </p>
+                </div>
 
             </div>
         </div>

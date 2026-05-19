@@ -1,14 +1,17 @@
 /**
  * Layout minimal pour les routes d'impression.
  * Pas de ThemeProvider, pas de footer, pas de AuthProvider.
- * La page reçoit un DOM propre — le CSS @media print est trivial.
+ * On ne re-déclare pas <html>/<body> (nesting invalide avec le root layout)
+ * → on surcharge les styles via <style> injecté.
  */
 export default function PrintLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="fr">
-            <body style={{ margin: 0, padding: 0, background: 'white' }}>
-                {children}
-            </body>
-        </html>
+        <>
+            <style>{`
+                body { margin: 0 !important; padding: 0 !important; background: white !important; display: block !important; min-height: unset !important; }
+                body > footer { display: none !important; }
+            `}</style>
+            {children}
+        </>
     )
 }
