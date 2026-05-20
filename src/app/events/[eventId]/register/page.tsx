@@ -401,7 +401,7 @@ function RegisterPageInner() {
 
     if (status === 'done') {
         return (
-            <div className={isEmbed ? ' mx-auto max-w-2xl' : 'min-h-screen bg-background px-4 py-12'}>
+            <div className={isEmbed ? 'bg-background py-4 mx-auto max-w-2xl' : 'min-h-screen bg-background px-4 py-12'}>
                 <div className={`bg-card border rounded-2xl overflow-hidden text-center ${isEmbed ? 'w-full' : 'max-w-xl w-full mx-auto'}`}>
                     {eventCfg.headerImageUrl && (
                         <img src={eventCfg.headerImageUrl} alt="" className="w-full block" />
