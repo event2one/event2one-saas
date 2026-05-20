@@ -38,6 +38,8 @@ export interface ProgramGridSelectorProps {
     multiSelect?: boolean
     /** Show capacity gauge bar on each session card (default: false) */
     showGauge?: boolean
+    /** Block selection when session is at capacity (default: false) */
+    enforceCapacity?: boolean
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -87,6 +89,7 @@ export default function ProgramGridSelector({
     onSessionRegistered,
     multiSelect = true,
     showGauge = false,
+    enforceCapacity = false,
 }: ProgramGridSelectorProps) {
     const [sessions, setSessions] = useState<ConfEventLight[]>([])
     const [loading, setLoading] = useState(true)
@@ -222,7 +225,7 @@ export default function ProgramGridSelector({
                                 session.id_salle?.capacite ?? session.capacite
                             )
                             const inscrits = parseNum(session.nb_inscrits)
-                            const full = cap > 0 && inscrits >= cap
+                            const full = enforceCapacity && cap > 0 && inscrits >= cap
                             const ratio = cap > 0 ? Math.min(inscrits / cap, 1) : 0
                             const isDisabled = (full && !isSelected) || isBusy
 
