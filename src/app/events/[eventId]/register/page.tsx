@@ -93,7 +93,7 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:Verdana,Tahoma,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin:0 auto">
+      <table width="600" cellpadding="0" cellspacing="0" align="center" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
         <!-- Header -->
         ${headerImageUrl
             ? `<tr><td style="padding:0;line-height:0"><img src="${headerImageUrl}" alt="" width="600" style="width:100%;max-width:600px;display:block"></td></tr>`
