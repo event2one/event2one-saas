@@ -46,6 +46,7 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
             subject: 'Confirmation de votre inscription – Grand Sommet IA Avec Nous',
             eventName: 'Grand Sommet IA Avec Nous',
             introText: 'Votre inscription au « Grand Sommet IA Avec Nous » a bien été prise en compte.\n\nCe rendez-vous réunira décideurs, experts, entrepreneurs et acteurs de l\'innovation autour des grandes transformations liées à l\'intelligence artificielle.\n\nVotre demande d\'inscription est désormais enregistrée.',
+            contactEmail: 'contact@ia-avecnous.fr',
             signatureName: 'L\'équipe IA Avec Nous',
             ctaUrl: 'https://ia-avecnous.fr/grand-sommet/',
             ctaLabel: 'Plus d\'informations',

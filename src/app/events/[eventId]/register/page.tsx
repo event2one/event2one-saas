@@ -70,14 +70,14 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
     const ctaLabel = cfg.email?.ctaLabel ?? 'En savoir plus'
 
     const introParagraphs = intro.split('\n\n')
-        .map(p => `<p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6">${p.replace(/\n/g, '<br>')}</p>`)
+        .map(p => `<p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;font-family:Verdana,Tahoma,Arial,sans-serif">${p.replace(/\n/g, '<br>')}</p>`)
         .join('')
 
     const ctaBlock = !hideBadgeCta && badgeUrl ? `
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:10px;margin-bottom:28px">
             <tr><td style="padding:24px;text-align:center">
-              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#374151">Votre e-badge personnalisé</p>
-              <p style="margin:0 0 16px;font-size:13px;color:#6b7280">Imprimez votre badge A4 pliable à glisser dans votre porte-badge.</p>
+              <p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#374151;font-family:Verdana,Tahoma,Arial,sans-serif">Votre e-badge personnalisé</p>
+              <p style="margin:0 0 16px;font-size:13px;color:#6b7280;font-family:Verdana,Tahoma,Arial,sans-serif">Imprimez votre badge A4 pliable à glisser dans votre porte-badge.</p>
               <a href="${badgeUrl}" style="display:inline-block;background:${color};color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 28px;border-radius:8px">Imprimer mon badge</a>
             </td></tr>
           </table>` : ctaUrl ? `
@@ -90,10 +90,10 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
     return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,sans-serif">
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Verdana,Tahoma,Arial,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin:0 auto">
         <!-- Header -->
         ${headerImageUrl
             ? `<tr><td style="padding:0;line-height:0"><img src="${headerImageUrl}" alt="" width="600" style="width:100%;max-width:600px;display:block"></td></tr>`
@@ -103,11 +103,11 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
         </td></tr>`}
         <!-- Body -->
         <tr><td style="padding:40px">
-          <p style="margin:0 0 16px;font-size:15px;color:#374151">Bonjour <strong>${form.prenom} ${form.nom}</strong>,</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#374151;font-family:Verdana,Tahoma,Arial,sans-serif">Bonjour <strong>${form.prenom} ${form.nom}</strong>,</p>
           ${introParagraphs}
           ${ctaBlock}
-          <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6">
-            Bien cordialement,<br><strong>${signatureName}</strong>${contactEmail ? `<br><a href="mailto:${contactEmail}" style="color:${color}">${contactEmail}</a>` : ''}
+          <p style="margin:28px 0 0;font-size:14px;color:#6b7280;line-height:1.6;font-family:Verdana,Tahoma,Arial,sans-serif">
+            Bien cordialement,<br><strong>${signatureName}</strong>${contactEmail ? `<br><a href="mailto:${contactEmail}" style="color:${color};font-family:Verdana,Tahoma,Arial,sans-serif">${contactEmail}</a>` : ''}
           </p>
         </td></tr>
         <!-- Footer -->
