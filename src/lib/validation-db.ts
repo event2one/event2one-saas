@@ -1,5 +1,6 @@
 import mysql from 'mysql'
 import { promisify } from 'util'
+import type { ValidationStatus } from '@/lib/validation-constants'
 export type { ValidationStatus } from '@/lib/validation-constants'
 
 const CREATE_TABLE_SQL = `
