@@ -197,16 +197,16 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
                             </div>
                         )}
                         <div style={{ fontSize: '16pt', fontWeight: 900, color: '#111', lineHeight: 1.1, wordBreak: 'break-word' }}>{fullName}</div>
-                        {roleBadge && (
-                            <div style={{ background: '#000', color: '#fff', fontWeight: 900, fontSize: '13pt', textAlign: 'center', padding: '2.5mm 0', width: '100%', letterSpacing: '0.5px', textTransform: 'uppercase', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                                {roleBadge}
-                            </div>
-                        )}
                         {jobTitle && <div style={{ fontSize: '8pt', color: '#777' }}>{jobTitle}</div>}
                         {society && <div style={{ fontSize: '11pt', fontWeight: 700, color: '#333' }}>{society}</div>}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={qrCheckin} alt="QR" style={{ width: '30mm', height: '30mm', marginTop: '2mm' }} />
                         <div style={{ fontSize: '6.5pt', color: '#999' }}>Scanner pour accéder au profil</div>
+                        {roleBadge && (
+                            <div style={{ background: '#000', color: '#fff', fontWeight: 900, fontSize: '13pt', textAlign: 'center', padding: '2.5mm 0', width: '100%', letterSpacing: '0.5px', textTransform: 'uppercase', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                                {roleBadge}
+                            </div>
+                        )}
                     </div>
                     {footerImageUrl
                         ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={footerImageUrl} alt="" style={{ width: '105mm', display: 'block' }} />
