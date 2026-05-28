@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Loader2, RefreshCw, Mail, Linkedin, QrCode, Pencil } from 'lucide-react'
 import { API_URL } from '@/utils/api'
-import { VALIDATION_STATUTS, type ValidationStatus } from '@/lib/validation-db'
+import { VALIDATION_STATUTS, type ValidationStatus } from '@/lib/validation-constants'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
