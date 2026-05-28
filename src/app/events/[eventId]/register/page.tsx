@@ -422,7 +422,7 @@ function RegisterPageInner() {
                     {eventCfg.headerImageUrl && (
                         <img src={eventCfg.headerImageUrl} alt="" className="w-full block" />
                     )}
-                    <div className="px-8 py-6 space-y-4">
+                    <div className="px-8 py-6 space-y-4" style={eventCfg.fontSizeZoom ? { zoom: eventCfg.fontSizeZoom } : undefined}>
                         <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
                             <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
                         </div>
