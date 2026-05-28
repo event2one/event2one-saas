@@ -397,6 +397,7 @@ function RegisterPageInner() {
                         body: JSON.stringify({
                             dest: form.mail,
                             subject: eventCfg.email!.subject,
+                            from_name: eventCfg.email!.fromName ?? eventCfg.email!.eventName,
                             body: buildConfirmationHtml(eventCfg, form, badgeUrl),
                         }),
                     }).catch(() => {})

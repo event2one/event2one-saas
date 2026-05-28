@@ -29,6 +29,7 @@ export type EventConfig = {
         logoUrl?: string
         eventName?: string
         introText?: string
+        fromName?: string
         contactEmail?: string
         signatureName?: string
         closingText?: string
