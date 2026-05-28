@@ -65,6 +65,7 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
     const intro = cfg.email?.introText ?? `Nous avons bien reçu votre inscription à ${eventName} et nous vous en remercions.`
     const contactEmail = cfg.email?.contactEmail ?? 'contact@mlg-consulting.com'
     const signatureName = cfg.email?.signatureName ?? 'Notre équipe'
+    const closingText = cfg.email?.closingText ?? 'Bien cordialement,'
     const hideBadgeCta = cfg.email?.hideBadgeCta ?? false
     const ctaUrl = cfg.email?.ctaUrl
     const ctaLabel = cfg.email?.ctaLabel ?? 'En savoir plus'
@@ -107,7 +108,7 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
           ${introParagraphs}
           ${ctaBlock}
           <p style="margin:28px 0 0;font-size:14px;color:#6b7280;line-height:1.6;font-family:Verdana,Tahoma,Arial,sans-serif">
-            Bien cordialement,<br><strong>${signatureName}</strong>${contactEmail ? `<br><a href="mailto:${contactEmail}" style="color:${color};font-family:Verdana,Tahoma,Arial,sans-serif">${contactEmail}</a>` : ''}
+            ${closingText}<br><strong>${signatureName}</strong>${contactEmail ? `<br><a href="mailto:${contactEmail}" style="color:${color};font-family:Verdana,Tahoma,Arial,sans-serif">${contactEmail}</a>` : ''}
           </p>
         </td></tr>
         <!-- Footer -->
@@ -125,6 +126,7 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
 
 const DEFAULT_CONFIG: EventConfig = {
     showLinkedIn: true,
+    showProgram: true,
     showIdDocument: false,
     requireIdDocument: false,
     hiddenFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
@@ -137,7 +139,7 @@ function RegisterPageInner() {
     const isEmbed = searchParams.get('embed') === '1'
 
     const eventCfg = { ...DEFAULT_CONFIG, ...(EVENT_CONFIG[eventId] ?? {}) }
-    const { showLinkedIn, showIdDocument, requireIdDocument, primaryColor, primaryForeground } = eventCfg
+    const { showLinkedIn, showProgram, showIdDocument, requireIdDocument, primaryColor, primaryForeground } = eventCfg
     const hiddenFields = new Set<string>(eventCfg.hiddenFields ?? [])
     const requiredFields = new Set<string>(eventCfg.requiredFields ?? [])
 
@@ -362,7 +364,16 @@ function RegisterPageInner() {
                 await uploadVisuel(doc.back, 'id_card_verso')
             }
 
-            // 5. Send confirmation email (fire-and-forget — ne bloque pas l'inscription)
+            // 5. Initialize validation status en_attente (fire-and-forget)
+            if (eventCfg.validationWorkflow) {
+                fetch(`/saas/api/events/${eventId}/validation`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_contact: String(id_contact), status: 'en_attente' }),
+                }).catch(() => {})
+            }
+
+            // 6. Send confirmation email (fire-and-forget — ne bloque pas l'inscription)
             if (form.mail && eventCfg.email) {
                 ;(async () => {
                     let badgeUrl: string | null = null
@@ -587,18 +598,20 @@ function RegisterPageInner() {
                 </div>
 
                 {/* Program grid */}
-                <div className="bg-card border rounded-2xl p-6 md:p-8 space-y-4">
-                    <div>
-                        <p className="text-sm font-semibold">Programme de l&apos;événement</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                            Sélectionnez les sessions auxquelles vous souhaitez participer.
-                        </p>
+                {showProgram && (
+                    <div className="bg-card border rounded-2xl p-6 md:p-8 space-y-4">
+                        <div>
+                            <p className="text-sm font-semibold">Programme de l&apos;événement</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Sélectionnez les sessions auxquelles vous souhaitez participer.
+                            </p>
+                        </div>
+                        <ProgramGridSelector
+                            eventId={eventId}
+                            onSelectionChange={setSelectedSessions}
+                        />
                     </div>
-                    <ProgramGridSelector
-                        eventId={eventId}
-                        onSelectionChange={setSelectedSessions}
-                    />
-                </div>
+                )}
 
                 {/* ID document */}
                 {showIdDocument && (

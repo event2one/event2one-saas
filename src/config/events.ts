@@ -9,8 +9,17 @@ export type EventConfig = {
 
     // ── Register page ─────────────────────────────────────────────────────────
     showLinkedIn?: boolean
+    showProgram?: boolean
     showIdDocument?: boolean
     requireIdDocument?: boolean
+    /** Activate two-step validation workflow (inscription → retenu/liste_attente/non_retenu) */
+    validationWorkflow?: boolean
+    /** Email templates sent by the admin for each validation decision */
+    validationEmails?: {
+        retenu?:        { subject: string; introText: string; ctaUrl?: string; ctaLabel?: string }
+        liste_attente?: { subject: string; introText: string }
+        non_retenu?:    { subject: string; introText: string }
+    }
     /** Keys from the FIELDS array in register/page.tsx */
     hiddenFields?: string[]
     requiredFields?: string[]
@@ -22,6 +31,7 @@ export type EventConfig = {
         introText?: string
         contactEmail?: string
         signatureName?: string
+        closingText?: string
         ctaUrl?: string
         ctaLabel?: string
         hideBadgeCta?: boolean
@@ -36,21 +46,22 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         footerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_footer.png',
 
         showLinkedIn: false,
-        showIdDocument: true,
-        requireIdDocument: true,
-        hiddenFields: ['sn_linkedin', 'port', 'societe', 'fonction'],
+        showProgram: false,
+        showIdDocument: false,
+        validationWorkflow: true,
+        requireIdDocument: false,
+        hiddenFields: ['sn_linkedin', 'port'],
         requiredFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
-        confirmationMessage: 'Nous vous remercions de votre intérêt pour le Grand Sommet IA Avec Nous.\n\nUn email de confirmation vient de vous être envoyé avec les prochaines étapes et les informations relatives au Grand Sommet IA Avec Nous.',
+        confirmationMessage: 'Votre pré-inscription au Sommet européen « L\'IA avec NOUS » est bien enregistrée.\n\nUn email de confirmation vient de vous être envoyé.',
 
         email: {
-            subject: 'Confirmation de votre inscription – Grand Sommet IA Avec Nous',
-            eventName: 'Grand Sommet IA Avec Nous',
-            introText: 'Votre inscription au « Grand Sommet IA Avec Nous » a bien été prise en compte.\n\nCe rendez-vous réunira décideurs, experts, entrepreneurs et acteurs de l\'innovation autour des grandes transformations liées à l\'intelligence artificielle.\n\nVotre demande d\'inscription est désormais enregistrée.',
+            subject: 'Pré-inscription confirmée — Sommet « L\'IA avec NOUS » — 12 juin 2026',
+            eventName: 'Sommet « L\'IA avec NOUS »',
+            introText: 'Votre pré-inscription au Sommet européen « L\'IA avec NOUS » est bien enregistrée.\n\n<span style="color:#dc2626;font-style:italic">Vous recevrez un mail quatre jours avant l\'événement pour confirmer définitivement votre inscription. Les places étant limitées, pensez à répondre sous 48h — vous recevrez votre billet avec QR Code suite à cette confirmation.</span>\n\nLe programme s\'annonce riche et dense. Nous vous recommandons de <strong>bloquer l\'intégralité de votre journée</strong> <em>pour profiter de tous les temps forts</em>. Une zone dédiée sera disponible pour assurer vos visioconférences et répondre à quelques mails ;) La journée se clôturera par un <strong>cocktail festif à partir de 18h30</strong> — nous vous invitons à rester avec nous pour en profiter pleinement.\n\nA noter également que le programme est susceptible d\'évoluer jusqu\'au jour J en raison de contraintes liées à l\'agenda de certains de nos officiels.\n\nRetrouvez le programme complet et la liste des intervenants sur <strong><a href="https://ia-avecnous.fr" style="color:#170b7e">ia-avecnous.fr</a></strong>',
             contactEmail: 'contact@ia-avecnous.fr',
-            signatureName: 'L\'équipe IA Avec Nous',
-            ctaUrl: 'https://ia-avecnous.fr/grand-sommet/',
-            ctaLabel: 'Plus d\'informations',
-            hideBadgeCta: false,
+            signatureName: 'L\'équipe « L\'IA avec NOUS »',
+            closingText: 'À très bientôt à Lille.',
+            hideBadgeCta: true,
         },
     },
 }

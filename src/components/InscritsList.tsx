@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Loader2, RefreshCw, Mail, Linkedin, QrCode, Pencil } from 'lucide-react'
 import { API_URL } from '@/utils/api'
+import { VALIDATION_STATUTS, type ValidationStatus } from '@/lib/validation-db'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -56,7 +57,6 @@ interface ContactGroup {
     contact: ContactData
     statuts: ConferencierStatut[]
     sessions: ConfEventLight[]
-    /** Most prominent statut (first encountered) */
     primaryStatut?: ConferencierStatut
 }
 
@@ -76,6 +76,53 @@ function photoUrl(contact: ContactData): string | null {
 function formatTime(t?: string) {
     if (!t) return ''
     return t.slice(0, 5).replace(':', 'h')
+}
+
+// ─── ValidationSelect ─────────────────────────────────────────────────────────
+
+function ValidationSelect({
+    idContact,
+    status,
+    saving,
+    onChange,
+}: {
+    idContact: string
+    status: ValidationStatus
+    saving: boolean
+    onChange: (idContact: string, status: ValidationStatus) => void
+}) {
+    const current = VALIDATION_STATUTS.find(s => s.key === status) ?? VALIDATION_STATUTS[0]
+
+    return (
+        <div className="relative shrink-0">
+            {saving ? (
+                <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded border"
+                    style={{ backgroundColor: current.bg, color: current.color, borderColor: current.color + '40' }}
+                >
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {current.label}
+                </span>
+            ) : (
+                <select
+                    value={status}
+                    onChange={e => onChange(idContact, e.target.value as ValidationStatus)}
+                    className="text-xs font-medium rounded border px-2 py-0.5 pr-5 appearance-none cursor-pointer focus:outline-none focus:ring-1"
+                    style={{
+                        backgroundColor: current.bg,
+                        color: current.color,
+                        borderColor: current.color + '60',
+                    }}
+                >
+                    {VALIDATION_STATUTS.map(s => (
+                        <option key={s.key} value={s.key} style={{ backgroundColor: '#fff', color: '#111' }}>
+                            {s.label}
+                        </option>
+                    ))}
+                </select>
+            )}
+        </div>
+    )
 }
 
 // ─── CheckinBadge ─────────────────────────────────────────────────────────────
@@ -115,13 +162,20 @@ function InscritsListItem({
     group,
     idEvent,
     scan,
+    validationWorkflow,
+    validationStatus,
+    validationSaving,
+    onValidationChange,
 }: {
     group: ContactGroup
     idEvent: string
     scan: CheckinRecord | null
+    validationWorkflow?: boolean
+    validationStatus?: ValidationStatus
+    validationSaving?: boolean
+    onValidationChange?: (idContact: string, status: ValidationStatus) => void
 }) {
-    const { contact, primaryStatut, sessions } = group
-    const badgeColor = primaryStatut?.event_contact_type_color ?? '#94a3b8'
+    const { contact, sessions } = group
     const [badgeLoading, setBadgeLoading] = useState(false)
     const photo = photoUrl(contact)
     const initials = `${contact.prenom?.[0] ?? ''}${contact.nom?.[0] ?? ''}`.toUpperCase()
@@ -176,7 +230,6 @@ function InscritsListItem({
                         {contact.prenom} {contact.nom}
                     </span>
                     {contact.flag && <span className="text-sm">{contact.flag}</span>}
-                    {/* All statuts */}
                     {group.statuts.map(s => {
                         const c = s.event_contact_type_color ?? '#94a3b8'
                         return (
@@ -194,7 +247,6 @@ function InscritsListItem({
                 <div className="text-xs text-zinc-400 truncate mt-0.5">
                     {[contact.fonction, contact.societe].filter(Boolean).join(' · ')}
                 </div>
-                {/* Sessions */}
                 {sessions.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1.5">
                         {sessions.map(s => (
@@ -203,6 +255,16 @@ function InscritsListItem({
                     </div>
                 )}
             </div>
+
+            {/* Validation select */}
+            {validationWorkflow && validationStatus && onValidationChange && (
+                <ValidationSelect
+                    idContact={contact.id_contact}
+                    status={validationStatus}
+                    saving={validationSaving ?? false}
+                    onChange={onValidationChange}
+                />
+            )}
 
             {/* Actions */}
             <div className="flex items-center gap-2.5 shrink-0 mt-0.5">
@@ -253,15 +315,19 @@ function InscritsListItem({
 
 export interface InscritsListProps {
     eventId: string
+    validationWorkflow?: boolean
 }
 
-export default function InscritsList({ eventId }: InscritsListProps) {
+export default function InscritsList({ eventId, validationWorkflow }: InscritsListProps) {
     const [rows, setRows] = useState<RegistrationRow[]>([])
     const [sessions, setSessions] = useState<ConfEventLight[]>([])
     const [checkinMap, setCheckinMap] = useState<Record<string, CheckinRecord>>({})
+    const [validationMap, setValidationMap] = useState<Record<string, ValidationStatus>>({})
+    const [validationSaving, setValidationSaving] = useState<Set<string>>(new Set())
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [activeStatut, setActiveStatut] = useState<string | null>(null)
+    const [activeValidation, setActiveValidation] = useState<ValidationStatus | null>(null)
     const [presenceFilter, setPresenceFilter] = useState<'tous' | 'badges' | 'absents'>('tous')
     const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -285,19 +351,30 @@ export default function InscritsList({ eventId }: InscritsListProps) {
         if (!eventId) return
         setLoading(true)
 
-        Promise.all([
+        const fetches: Promise<unknown>[] = [
             fetch(`${API_URL}?action=getPartenairesLight&params=${encodeURIComponent(` AND cf.id_event=${eventId}`)}&order_by=nom ASC`).then(r => r.json()),
             fetch(`${API_URL}?action=getConfeventLight&filter=${encodeURIComponent(` AND e.id_event=${eventId}`)}`).then(r => r.json()),
             fetch(`${CHECKIN_API_URL}?action=getCheckinList&id_event=${eventId}`).then(r => r.json()),
-        ])
-            .then(([regsData, sessionsData, checkinsData]: [RegistrationRow[], ConfEventLight[], CheckinRecord[]]) => {
-                setRows(Array.isArray(regsData) ? regsData : [])
-                setSessions(Array.isArray(sessionsData) ? sessionsData : [])
+        ]
+
+        if (validationWorkflow) {
+            fetches.push(
+                fetch(`/saas/api/events/${eventId}/validation`).then(r => r.json()).catch(() => ({}))
+            )
+        }
+
+        Promise.all(fetches)
+            .then(([regsData, sessionsData, checkinsData, validationData]) => {
+                setRows(Array.isArray(regsData) ? regsData as RegistrationRow[] : [])
+                setSessions(Array.isArray(sessionsData) ? sessionsData as ConfEventLight[] : [])
                 if (Array.isArray(checkinsData)) {
                     const map: Record<string, CheckinRecord> = {}
-                    checkinsData.forEach(c => { if (!map[c.id_contact]) map[c.id_contact] = c })
+                    ;(checkinsData as CheckinRecord[]).forEach(c => { if (!map[c.id_contact]) map[c.id_contact] = c })
                     setCheckinMap(map)
                     setLastRefresh(new Date())
+                }
+                if (validationWorkflow && validationData && typeof validationData === 'object') {
+                    setValidationMap(validationData as Record<string, ValidationStatus>)
                 }
             })
             .catch(() => {})
@@ -306,7 +383,26 @@ export default function InscritsList({ eventId }: InscritsListProps) {
         timerRef.current = setInterval(fetchCheckins, CHECKIN_REFRESH_INTERVAL)
         return () => { if (timerRef.current) clearInterval(timerRef.current) }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [eventId])
+    }, [eventId, validationWorkflow])
+
+    // ── Validation change ─────────────────────────────────────────────────────
+    const handleValidationChange = useCallback(async (idContact: string, status: ValidationStatus) => {
+        const prev = validationMap[idContact] ?? 'en_attente'
+        setValidationMap(m => ({ ...m, [idContact]: status }))
+        setValidationSaving(s => new Set(s).add(idContact))
+        try {
+            const res = await fetch(`/saas/api/events/${eventId}/validation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_contact: idContact, status }),
+            })
+            if (!res.ok) throw new Error()
+        } catch {
+            setValidationMap(m => ({ ...m, [idContact]: prev }))
+        } finally {
+            setValidationSaving(s => { const n = new Set(s); n.delete(idContact); return n })
+        }
+    }, [eventId, validationMap])
 
     // ── Session map ───────────────────────────────────────────────────────────
     const sessionMap = useMemo(() => {
@@ -330,16 +426,12 @@ export default function InscritsList({ eventId }: InscritsListProps) {
                 })
             }
             const group = map.get(id)!
-
-            // Collect statuts (deduplicated)
             if (row.conferencier_statut) {
                 const sid = row.conferencier_statut.id_event_contact_type
                 if (!group.statuts.find(s => s.id_event_contact_type === sid)) {
                     group.statuts.push(row.conferencier_statut)
                 }
             }
-
-            // Collect sessions (deduplicated)
             if (row.id_conf_event) {
                 if (!group.sessions.find(s => s.id_conf_event === row.id_conf_event)) {
                     const sessionData = sessionMap.get(row.id_conf_event) ?? { id_conf_event: row.id_conf_event }
@@ -357,6 +449,17 @@ export default function InscritsList({ eventId }: InscritsListProps) {
         return Array.from(map.values())
     }, [contactGroups])
 
+    // ── Validation counts ─────────────────────────────────────────────────────
+    const validationCounts = useMemo(() => {
+        if (!validationWorkflow) return null
+        const counts: Record<string, number> = {}
+        contactGroups.forEach(g => {
+            const s = validationMap[g.id_contact] ?? 'en_attente'
+            counts[s] = (counts[s] ?? 0) + 1
+        })
+        return counts
+    }, [contactGroups, validationMap, validationWorkflow])
+
     const totalBadges = useMemo(
         () => contactGroups.filter(g => checkinMap[g.id_contact]).length,
         [contactGroups, checkinMap]
@@ -367,6 +470,10 @@ export default function InscritsList({ eventId }: InscritsListProps) {
         return contactGroups
             .filter(g => {
                 if (activeStatut && !g.statuts.find(s => s.id_event_contact_type === activeStatut)) return false
+                if (activeValidation) {
+                    const vs = validationMap[g.id_contact] ?? 'en_attente'
+                    if (vs !== activeValidation) return false
+                }
                 const isBadged = !!checkinMap[g.id_contact]
                 if (presenceFilter === 'badges' && !isBadged) return false
                 if (presenceFilter === 'absents' && isBadged) return false
@@ -382,13 +489,12 @@ export default function InscritsList({ eventId }: InscritsListProps) {
                     g.sessions.some(s => (s.titre ?? '').toLowerCase().includes(q))
                 )
             })
-            // Badgés en tête
             .sort((a, b) => {
                 const aB = !!checkinMap[a.id_contact]
                 const bB = !!checkinMap[b.id_contact]
                 return aB === bB ? 0 : aB ? -1 : 1
             })
-    }, [contactGroups, activeStatut, presenceFilter, search, checkinMap])
+    }, [contactGroups, activeStatut, activeValidation, presenceFilter, search, checkinMap, validationMap])
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
@@ -421,6 +527,41 @@ export default function InscritsList({ eventId }: InscritsListProps) {
                     </div>
                 )}
             </div>
+
+            {/* Validation filter bar */}
+            {validationWorkflow && validationCounts && (
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setActiveValidation(null)}
+                        className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border transition-colors ${
+                            activeValidation === null
+                                ? 'bg-zinc-800 text-white border-zinc-800 dark:bg-zinc-200 dark:text-zinc-900 dark:border-zinc-200'
+                                : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                        }`}
+                    >
+                        Toutes demandes
+                        <span className="ml-1.5 opacity-60">{contactGroups.length}</span>
+                    </button>
+                    {VALIDATION_STATUTS.map(s => {
+                        const count = validationCounts[s.key] ?? 0
+                        const isActive = activeValidation === s.key
+                        return (
+                            <button
+                                key={s.key}
+                                onClick={() => setActiveValidation(isActive ? null : s.key)}
+                                className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border transition-colors"
+                                style={isActive
+                                    ? { backgroundColor: s.color, color: '#fff', borderColor: s.color }
+                                    : { backgroundColor: s.bg, color: s.color, borderColor: s.color + '60' }
+                                }
+                            >
+                                {s.label}
+                                <span className="ml-1.5 opacity-70">{count}</span>
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
 
             {/* Search */}
             <input
@@ -511,6 +652,13 @@ export default function InscritsList({ eventId }: InscritsListProps) {
                                 group={group}
                                 idEvent={eventId}
                                 scan={checkinMap[group.id_contact] ?? null}
+                                validationWorkflow={validationWorkflow}
+                                validationStatus={validationWorkflow
+                                    ? (validationMap[group.id_contact] ?? 'en_attente')
+                                    : undefined
+                                }
+                                validationSaving={validationSaving.has(group.id_contact)}
+                                onValidationChange={validationWorkflow ? handleValidationChange : undefined}
                             />
                         ))}
                     </div>

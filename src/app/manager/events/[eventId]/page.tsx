@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { getManagerEvent } from '../../actions';
 import EditEventForm from './edit-event-form';
 import InscritsList from '@/components/InscritsList';
+import { EVENT_CONFIG } from '@/config/events';
 
 export default async function EventEditPage({
     params,
