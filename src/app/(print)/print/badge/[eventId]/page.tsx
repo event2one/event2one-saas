@@ -35,6 +35,7 @@ export default function PrintBadgePage() {
     const [contact, setContact] = useState<Contact | null>(null)
     const [event, setEvent] = useState<EventData | null>(null)
     const [qrData, setQrData] = useState<string | null>(null)
+    const [roleBadge, setRoleBadge] = useState<string | null>(null)
     const [accent, setAccent] = useState('#2563eb')
     const [error, setError] = useState<string | null>(null)
 
@@ -56,8 +57,10 @@ export default function PrintBadgePage() {
                 const parts = await partRes.json()
                 const events = await evRes.json()
 
-                if (Array.isArray(parts) && parts[0]) setContact(parts[0].contact)
-                else { setError('Contact introuvable'); return }
+                if (Array.isArray(parts) && parts[0]) {
+                    setContact(parts[0].contact)
+                    if (parts[0].conferencier_statut?.libelle) setRoleBadge(parts[0].conferencier_statut.libelle)
+                } else { setError('Contact introuvable'); return }
 
                 const ev = Array.isArray(events) ? events[0] : events
                 if (ev) {
@@ -93,15 +96,16 @@ export default function PrintBadgePage() {
     )
 
     const badgeCfg = EVENT_CONFIG[eventId] ?? {}
-    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} />
+    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} />
 }
 
-function BadgeA4({ c, event, eventId, accent, qrData, headerImageUrl, footerImageUrl }: {
+function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, headerImageUrl, footerImageUrl }: {
     c: Contact
     event: EventData | null
     eventId: string
     accent: string
     qrData?: string
+    roleBadge?: string
     headerImageUrl?: string
     footerImageUrl?: string
 }) {
@@ -192,6 +196,11 @@ function BadgeA4({ c, event, eventId, accent, qrData, headerImageUrl, footerImag
                             </div>
                         }
                         <div style={{ fontSize: '16pt', fontWeight: 900, color: '#111', lineHeight: 1.1, wordBreak: 'break-word' }}>{fullName}</div>
+                        {roleBadge && (
+                            <div style={{ background: '#000', color: '#fff', fontWeight: 900, fontSize: '13pt', textAlign: 'center', padding: '2.5mm 0', width: '100%', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                                {roleBadge}
+                            </div>
+                        )}
                         {jobTitle && <div style={{ fontSize: '8pt', color: '#777' }}>{jobTitle}</div>}
                         {society && <div style={{ fontSize: '11pt', fontWeight: 700, color: '#333' }}>{society}</div>}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
