@@ -399,6 +399,7 @@ function RegisterPageInner() {
                             subject: eventCfg.email!.subject,
                             from_name: eventCfg.email!.fromName ?? eventCfg.email!.eventName,
                             reply_to: eventCfg.email!.replyTo,
+                            AddBCC: eventCfg.email!.contactEmail,
                             body: buildConfirmationHtml(eventCfg, form, badgeUrl),
                         }),
                     }).catch(() => {})
