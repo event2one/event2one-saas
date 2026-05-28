@@ -398,6 +398,7 @@ function RegisterPageInner() {
                             dest: form.mail,
                             subject: eventCfg.email!.subject,
                             from_name: eventCfg.email!.fromName ?? eventCfg.email!.eventName,
+                            reply_to: eventCfg.email!.replyTo,
                             body: buildConfirmationHtml(eventCfg, form, badgeUrl),
                         }),
                     }).catch(() => {})
