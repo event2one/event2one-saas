@@ -438,6 +438,9 @@ function RegisterPageInner() {
                                 Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
                             </p>
                         )}
+                        <p className="text-xs text-muted-foreground/70 border border-dashed rounded-lg px-4 py-3 text-left leading-relaxed">
+                            📬 Un email de confirmation vient de vous être envoyé. S&apos;il n&apos;apparaît pas dans votre boîte de réception dans les prochaines minutes, pensez à vérifier votre dossier <strong>courriers indésirables</strong> ou <strong>spam</strong> — en particulier si vous utilisez une adresse professionnelle ou un filtre anti-spam.
+                        </p>
                         {!isEmbed && (
                             <Link
                                 href={`/events/${eventId}`}
