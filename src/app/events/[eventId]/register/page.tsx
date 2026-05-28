@@ -163,6 +163,7 @@ function RegisterPageInner() {
     const [participationTypes, setParticipationTypes] = useState<EventContactType[]>([])
     const [participationTypeId, setParticipationTypeId] = useState('')
     const [selectedSessions, setSelectedSessions] = useState<string[]>([])
+    const [besoinAccessibilite, setBesoinAccessibilite] = useState('')
     const [idDoc, setIdDoc] = useState<{ front: File | null; back: File | null; docType: DocumentType }>({
         front: null, back: null, docType: 'id_card',
     })
@@ -180,7 +181,7 @@ function RegisterPageInner() {
     }, [])
 
     useEffect(() => {
-        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (143, 466, 467)')}`)
+        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (466, 466, 467,468,469,470,471,472,473,474,475,476)')}`)
             .then(r => r.json())
             .then((data: EventContactType[]) => {
                 if (Array.isArray(data) && data.length > 0) {
@@ -293,6 +294,7 @@ function RegisterPageInner() {
                 body: JSON.stringify({
                     ...form,
                     ...(liProfile?.photo ? { photo_linkedin: liProfile.photo } : {}),
+                    ...(besoinAccessibilite ? { besoin_accessibilite: besoinAccessibilite } : {}),
                 }),
             })
             const contactData = JSON.parse(await contactRes.text())
@@ -542,7 +544,7 @@ function RegisterPageInner() {
                             {participationTypes.length > 0 && (
                                 <div className="sm:col-span-2">
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
-                                        Type de participation
+                                        Vous représentez ?
                                         <span className="text-destructive">*</span>
                                     </label>
                                     <select
@@ -592,6 +594,21 @@ function RegisterPageInner() {
                                 </div>
                                 )
                             })}
+                        </div>
+
+                        {/* Besoins d'accessibilité */}
+                        <div className="sm:col-span-2">
+                            <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                                Besoins spécifiques d&apos;accessibilité
+                                <span className="text-muted-foreground font-normal">(optionnel)</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={besoinAccessibilite}
+                                onChange={e => setBesoinAccessibilite(e.target.value)}
+                                placeholder="Ex : fauteuil roulant, interprète LSF…"
+                                className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                            />
                         </div>
 
                     </form>
