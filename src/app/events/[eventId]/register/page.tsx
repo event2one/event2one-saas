@@ -57,7 +57,7 @@ const LinkedInIcon = () => (
 )
 
 function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: string | null): string {
-    const color = cfg.primaryColor ?? '#1a56db'
+    const color = cfg.primaryColor ?? '#000000'
     const logo = cfg.email?.logoUrl
     const headerImageUrl = cfg.headerImageUrl
     const footerImageUrl = cfg.footerImageUrl

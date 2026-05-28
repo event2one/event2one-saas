@@ -36,7 +36,7 @@ export default function PrintBadgePage() {
     const [event, setEvent] = useState<EventData | null>(null)
     const [qrData, setQrData] = useState<string | null>(null)
     const [roleBadge, setRoleBadge] = useState<string | null>(null)
-    const [accent, setAccent] = useState('#2563eb')
+    const [accent, setAccent] = useState('#000000')
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {

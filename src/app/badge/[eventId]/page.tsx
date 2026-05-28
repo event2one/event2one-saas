@@ -241,7 +241,7 @@ function EBadgeGeneratorInner() {
     const [loading, setLoading] = useState(false)
     const [selected, setSelected] = useState<Partner | null>(null)
     const [event, setEvent]     = useState<EventData | null>(null)
-    const [accentColor, setAccentColor] = useState('#2563eb')
+    const [accentColor, setAccentColor] = useState('#000000')
     const [autoprintEnabled, setAutoprintEnabled] = useState(false)
     const [signedQrData, setSignedQrData] = useState<string | null>(null)
     const [tokenError, setTokenError] = useState<string | null>(null)
