@@ -10,6 +10,7 @@ export type EventConfig = {
     // ── Register page ─────────────────────────────────────────────────────────
     showLinkedIn?: boolean
     showProgram?: boolean
+    showBadgePhoto?: boolean
     showIdDocument?: boolean
     requireIdDocument?: boolean
     /** Activate two-step validation workflow (inscription → retenu/liste_attente/non_retenu) */

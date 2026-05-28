@@ -96,16 +96,17 @@ export default function PrintBadgePage() {
     )
 
     const badgeCfg = EVENT_CONFIG[eventId] ?? {}
-    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} />
+    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} showPhoto={badgeCfg.showBadgePhoto ?? false} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} />
 }
 
-function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, headerImageUrl, footerImageUrl }: {
+function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, headerImageUrl, footerImageUrl }: {
     c: Contact
     event: EventData | null
     eventId: string
     accent: string
     qrData?: string
     roleBadge?: string
+    showPhoto?: boolean
     headerImageUrl?: string
     footerImageUrl?: string
 }) {
@@ -189,12 +190,12 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, headerImageUrl,
                         </div>
                     }
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5mm 6mm', gap: '3mm', textAlign: 'center' }}>
-                        {c.photo
+                        {showPhoto && (c.photo
                             ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={`${DIR_IMG}${c.photo}`} alt="" style={{ width: '24mm', height: '24mm', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${accent}` }} />
                             : <div style={{ width: '24mm', height: '24mm', borderRadius: '50%', background: `${accent}18`, border: `2px solid ${accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16pt', color: accent, fontWeight: 900 }}>
                                 {c.prenom.charAt(0)}{c.nom.charAt(0)}
                             </div>
-                        }
+                        )}
                         <div style={{ fontSize: '16pt', fontWeight: 900, color: '#111', lineHeight: 1.1, wordBreak: 'break-word' }}>{fullName}</div>
                         {roleBadge && (
                             <div style={{ background: '#000', color: '#fff', fontWeight: 900, fontSize: '13pt', textAlign: 'center', padding: '2.5mm 0', width: '100%', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
