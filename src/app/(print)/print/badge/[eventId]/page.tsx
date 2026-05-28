@@ -198,7 +198,7 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
                         )}
                         <div style={{ fontSize: '16pt', fontWeight: 900, color: '#111', lineHeight: 1.1, wordBreak: 'break-word' }}>{fullName}</div>
                         {roleBadge && (
-                            <div style={{ background: '#000', color: '#fff', fontWeight: 900, fontSize: '13pt', textAlign: 'center', padding: '2.5mm 0', width: '100%', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                            <div style={{ background: '#000', color: '#fff', fontWeight: 900, fontSize: '13pt', textAlign: 'center', padding: '2.5mm 0', width: '100%', letterSpacing: '0.5px', textTransform: 'uppercase', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
                                 {roleBadge}
                             </div>
                         )}
