@@ -19,16 +19,16 @@ const UPLOAD_API_KEY = 'mgv_yt_upload_2026'
 const FIELDS = [
     { key: 'prenom',         label: 'Prénom / First name',                    required: true,  type: 'text'  },
     { key: 'nom',            label: 'Nom / Last name',                        required: true,  type: 'text'  },
-    { key: 'societe',        label: 'Société',                                required: true,  type: 'text'  },
-    { key: 'fonction',       label: 'Fonction / Titre',                       required: false, type: 'text'  },
+    { key: 'societe',        label: 'Société / Organisation',                 required: true,  type: 'text'  },
+    { key: 'fonction',       label: 'Fonction / Job title',                   required: false, type: 'text'  },
     { key: 'mail',           label: 'Email',                                  required: true,  type: 'email' },
-    { key: 'port',           label: 'Mobile',                                 required: false, type: 'tel'   },
-    { key: 'date_naissance', label: 'Date de naissance',                      required: false, type: 'date'  },
-    { key: 'pays_naissance', label: 'Pays de naissance',                      required: false, type: 'text',  placeholder: 'Ex : France, Maroc, Italie…'  },
-    { key: 'ville_naissance',label: 'Ville de naissance',                     required: false, type: 'text',  placeholder: 'Ex : Paris, Casablanca, Rome…' },
-    { key: 'pays',           label: 'Pays',                                   required: false, type: 'text',  placeholder: 'Ex : France, Belgique…'        },
-    { key: 'cp',             label: 'Code postal',                            required: false, type: 'text',  placeholder: 'Ex : 75001'                    },
-    { key: 'sn_linkedin',    label: 'Profil LinkedIn',                        required: false, type: 'url',  placeholder: 'https://www.linkedin.com/in/...' },
+    { key: 'port',           label: 'Mobile / Phone',                         required: false, type: 'tel'   },
+    { key: 'date_naissance', label: 'Date de naissance / Date of birth',      required: false, type: 'date'  },
+    { key: 'pays_naissance', label: 'Pays de naissance / Country of birth',   required: false, type: 'text',  placeholder: 'Ex : France, Morocco, Italy…'  },
+    { key: 'ville_naissance',label: 'Ville de naissance / City of birth',     required: false, type: 'text',  placeholder: 'Ex : Paris, Casablanca, Rome…'  },
+    { key: 'pays',           label: 'Pays / Country',                         required: false, type: 'text',  placeholder: 'Ex : France, Belgium…'          },
+    { key: 'cp',             label: 'Code postal / Postcode',                 required: false, type: 'text',  placeholder: 'Ex : 75001'                     },
+    { key: 'sn_linkedin',    label: 'Profil LinkedIn / LinkedIn profile',     required: false, type: 'url',  placeholder: 'https://www.linkedin.com/in/...' },
     //{ key: 'punchline',   label: 'Thème / Punchline de votre intervention',required: false, type: 'text', full: true },
 ] as const
 
@@ -631,8 +631,8 @@ function RegisterPageInner() {
                         {/* Besoins d'accessibilité */}
                         <div className="sm:col-span-2">
                             <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
-                                Besoins spécifiques d&apos;accessibilité
-                                <span className="text-muted-foreground font-normal">(optionnel)</span>
+                                Besoins spécifiques d&apos;accessibilité / Specific accessibility needs
+                                <span className="text-muted-foreground font-normal">(optionnel / optional)</span>
                             </label>
                             <input
                                 type="text"
@@ -683,7 +683,7 @@ function RegisterPageInner() {
                     style={primaryColor ? { backgroundColor: primaryColor, color: primaryForeground ?? '#ffffff' } : undefined}
                     className="w-full py-3 text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-opacity disabled:opacity-50"
                 >
-                    {status === 'submitting' ? 'Envoi en cours…' : 'Confirmer mon inscription'}
+                    {status === 'submitting' ? 'Envoi en cours… / Sending…' : 'Confirmer mon inscription / Confirm registration'}
                 </button>
 
                 {/* Mention CNIL */}
