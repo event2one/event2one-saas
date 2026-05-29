@@ -426,7 +426,7 @@ function RegisterPageInner() {
                         <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto">
                             <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
                         </div>
-                        <h1 className="text-xl font-bold">Inscription confirmée !</h1>
+                        <h1 className="text-xl font-bold">{eventCfg.confirmationTitle ?? 'Inscription confirmée !'}</h1>
                         {eventCfg.confirmationMessage ? (
                             <div className="text-muted-foreground text-sm space-y-2 text-left">
                                 {eventCfg.confirmationMessage.split('\n\n').map((p, i) => (
@@ -434,13 +434,15 @@ function RegisterPageInner() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-muted-foreground text-sm">
-                                Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
-                            </p>
+                            <>
+                                <p className="text-muted-foreground text-sm">
+                                    Merci <strong>{form.prenom} {form.nom}</strong>. Notre équipe vous contactera pour confirmer les détails.
+                                </p>
+                                <p className="text-sm text-muted-foreground/70 border border-dashed rounded-lg px-4 py-3 text-left leading-relaxed">
+                                    📬 Un email de confirmation vient de vous être envoyé. S&apos;il n&apos;apparaît pas dans votre boîte de réception dans les prochaines minutes, pensez à vérifier votre dossier <strong>courriers indésirables</strong> ou <strong>spam</strong> — en particulier si vous utilisez une adresse professionnelle ou un filtre anti-spam.
+                                </p>
+                            </>
                         )}
-                        <p className="text-sm text-muted-foreground/70 border border-dashed rounded-lg px-4 py-3 text-left leading-relaxed">
-                            📬 Un email de confirmation vient de vous être envoyé. S&apos;il n&apos;apparaît pas dans votre boîte de réception dans les prochaines minutes, pensez à vérifier votre dossier <strong>courriers indésirables</strong> ou <strong>spam</strong> — en particulier si vous utilisez une adresse professionnelle ou un filtre anti-spam.
-                        </p>
                         {!isEmbed && (
                             <Link
                                 href={`/events/${eventId}`}

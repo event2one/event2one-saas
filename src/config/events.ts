@@ -26,6 +26,7 @@ export type EventConfig = {
     /** Keys from the FIELDS array in register/page.tsx */
     hiddenFields?: string[]
     requiredFields?: string[]
+    confirmationTitle?: string
     confirmationMessage?: string
     email?: {
         subject?: string
@@ -54,12 +55,13 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         showProgram: false,
         showBadgePhoto: false,
         fontSizeZoom: 1.15,
-        showIdDocument: false,
+        showIdDocument: true,
         validationWorkflow: true,
-        requireIdDocument: false,
+        requireIdDocument: true,
         hiddenFields: ['sn_linkedin', 'port'],
         requiredFields: ['date_naissance', 'pays_naissance', 'ville_naissance'],
-        confirmationMessage: 'Votre pré-inscription au Sommet européen « L\'IA avec NOUS » est bien enregistrée.\n\nUn email de confirmation vient de vous être envoyé.',
+        confirmationTitle: 'Enregistrement confirmé !',
+        confirmationMessage: 'Votre enregistrement au Sommet européen « L\'IA avec NOUS » est bien pris en compte.\n\nNous vous invitons à bien prendre connaissance du mail qui vient de vous être envoyé et qui précise les modalités de réception du badge.\n\n📬 S\'il n\'apparaît pas dans votre boîte de réception dans les prochaines minutes, pensez à vérifier votre dossier courriers indésirables ou spam — en particulier si vous utilisez une adresse professionnelle ou un filtre anti-spam.\n\n―\n\nYour registration for the European Summit "AI With US" has been successfully recorded.\n\nWe invite you to carefully read the email that has just been sent to you, which details the steps to receive your badge.\n\n📬 If it does not appear in your inbox within the next few minutes, please remember to check your junk mail or spam folder — particularly if you are using a professional email address or a spam filter.',
 
         email: {
             subject: 'Pré-inscription confirmée — Sommet « L\'IA avec NOUS » — 12 juin 2026',
