@@ -587,19 +587,33 @@ function RegisterPageInner() {
                                             </span>
                                         )}
                                     </label>
-                                    <input
-                                        type={type}
-                                        required={required}
-                                        placeholder={placeholder ?? ''}
-                                        value={form[key] ?? ''}
-                                        onChange={e => handleChange(key, e.target.value)}
-                                        list={key === 'pays' || key === 'pays_naissance' ? 'pays-naissance-list' : undefined}
-                                        className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                                    />
-                                    {key === 'pays_naissance' && (
-                                        <datalist id="pays-naissance-list">
-                                            {countries.map(c => <option key={c} value={c} />)}
-                                        </datalist>
+                                    {key === 'pays' ? (
+                                        <select
+                                            required={required}
+                                            value={form[key] ?? ''}
+                                            onChange={e => handleChange(key, e.target.value)}
+                                            className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                                        >
+                                            <option value="">—</option>
+                                            {countries.map(c => <option key={c} value={c}>{c}</option>)}
+                                        </select>
+                                    ) : (
+                                        <>
+                                            <input
+                                                type={type}
+                                                required={required}
+                                                placeholder={placeholder ?? ''}
+                                                value={form[key] ?? ''}
+                                                onChange={e => handleChange(key, e.target.value)}
+                                                list={key === 'pays_naissance' ? 'pays-naissance-list' : undefined}
+                                                className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                                            />
+                                            {key === 'pays_naissance' && (
+                                                <datalist id="pays-naissance-list">
+                                                    {countries.map(c => <option key={c} value={c} />)}
+                                                </datalist>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                                 )
