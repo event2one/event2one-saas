@@ -665,20 +665,25 @@ function RegisterPageInner() {
                 {/* Mention CNIL */}
                 <div className="text-sm text-muted-foreground leading-relaxed border-t pt-4 space-y-2">
                     <p>
-                        Les données récoltées par ce formulaire sont destinées à la Région Hauts-de-France et au CITC et sont traitées dans le cadre de l&apos;organisation du Grand Sommet IA avec NOUS, le 12 juin 2026 à Lille.
+                        Les données recueillies via ce formulaire sont destinées à la Région Hauts-de-France, au CITC ainsi qu&apos;à MLG Consulting, prestataire chargé de la gestion des inscriptions, et sont traitées dans le cadre de l&apos;organisation du Grand Sommet IA avec NOUS, qui se tiendra le 12 juin 2026 à Lille.
                     </p>
                     <p>
-                        Elles seront conservées pour une durée de 3 mois à compter de la fin de l&apos;événement auquel vous vous êtes inscrit.
+                        Ces données sont collectées aux fins de gestion des inscriptions, d&apos;organisation de l&apos;événement, d&apos;accueil des participants et de suivi administratif de la manifestation.
                     </p>
                     <p>
-                        Vous disposez d&apos;un droit d&apos;accès, de rectification, d&apos;effacement de vos données, de limitation du traitement ou, pour des motifs légitimes, vous opposer au traitement de ces données.
-                        Vous pouvez exercer ces droits auprès de{' '}
+                        Elles seront conservées pendant une durée de 3 mois à compter de la fin de l&apos;événement auquel vous vous êtes inscrit.
+                    </p>
+                    <p>
+                        Conformément à la réglementation applicable en matière de protection des données personnelles, vous disposez d&apos;un droit d&apos;accès, de rectification, d&apos;effacement de vos données, de limitation du traitement ainsi que d&apos;un droit d&apos;opposition au traitement pour des motifs légitimes.
+                    </p>
+                    <p>
+                        Vous pouvez exercer ces droits auprès de la Région Hauts-de-France à l&apos;adresse suivante&nbsp;:{' '}
                         <a href="mailto:web@hautsdefrance.fr" className="underline hover:text-foreground">web@hautsdefrance.fr</a>
-                        {' '}ou en contactant le Délégué à la protection des données (DPO) de la Région Hauts-de-France dont les coordonnées sont disponibles sur{' '}
-                        <a href="https://www.hautsdefrance.fr/informatique-et-libertes" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">https://www.hautsdefrance.fr/informatique-et-libertes</a>
+                        {' '}ou en contactant le Délégué à la protection des données (DPO) de la Région Hauts-de-France, dont les coordonnées sont disponibles sur le site&nbsp;:{' '}
+                        <a href="https://www.hautsdefrance.fr/informatique-et-libertes" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">https://www.hautsdefrance.fr/informatique-et-libertes</a>.
                     </p>
                     <p>
-                        Si, après avoir contacté le DPO, vous estimez que vos droits Informatiques &amp; Libertés ne sont pas respectés ou que le traitement n&apos;est pas conforme aux règles de protection des données, vous pouvez adresser une réclamation auprès de la{' '}
+                        Si, après avoir contacté le DPO, vous estimez que vos droits « Informatique et Libertés » ne sont pas respectés ou que le traitement n&apos;est pas conforme aux règles de protection des données, vous pouvez adresser une réclamation auprès de la{' '}
                         <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">CNIL</a>.
                     </p>
                 </div>
