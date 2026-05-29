@@ -26,6 +26,8 @@ export type EventConfig = {
     /** Keys from the FIELDS array in register/page.tsx */
     hiddenFields?: string[]
     requiredFields?: string[]
+    /** Title shown above the form intro */
+    formTitle?: string
     /** Intro text shown at the top of the registration form (supports \n\n paragraphs) */
     formIntro?: string
     confirmationTitle?: string
@@ -62,6 +64,7 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         requireIdDocument: true,
         hiddenFields: ['sn_linkedin', 'port', 'fonction', 'cp', 'pays_naissance', 'ville_naissance'],
         requiredFields: ['date_naissance'],
+        formTitle: 'Enregistrement – Sommet IA avec Nous\nRegistration – IA avec Nous Summit',
         formIntro: 'Remplissez le formulaire ci-dessous pour enregistrer votre inscription. Attention vous devrez impérativement confirmer votre présence 4 jours avant l\'événement, soit le lundi 8 juin pour finaliser votre inscription et recevoir votre badge.\n\nPlease fill in the form below to register your attendance. Please note that you will be required to confirm your presence 4 days before the event — on Monday, June 8th — in order to finalise your registration and receive your badge.',
         confirmationTitle: 'Enregistrement confirmé !',
         confirmationMessage: 'Votre enregistrement au Sommet européen « L\'IA avec NOUS » est bien pris en compte.\n\nNous vous invitons à bien prendre connaissance du mail qui vient de vous être envoyé et qui précise les modalités de réception du badge.\n\n📬 S\'il n\'apparaît pas dans votre boîte de réception dans les prochaines minutes, pensez à vérifier votre dossier courriers indésirables ou spam — en particulier si vous utilisez une adresse professionnelle ou un filtre anti-spam.\n\n―\n\nYour registration for the European Summit "AI With US" has been successfully recorded.\n\nWe invite you to carefully read the email that has just been sent to you, which details the steps to receive your badge.\n\n📬 If it does not appear in your inbox within the next few minutes, please remember to check your junk mail or spam folder — particularly if you are using a professional email address or a spam filter.',

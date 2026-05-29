@@ -184,7 +184,7 @@ function RegisterPageInner() {
     }, [])
 
     useEffect(() => {
-        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (466, 466, 467,468,469,470,471,472,473,474,475,476)')}`)
+        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (466, 467,468,469,470,471,472,473,474,475,476)')}`)
             .then(r => r.json())
             .then((data: EventContactType[]) => {
                 if (Array.isArray(data) && data.length > 0) {
@@ -545,6 +545,13 @@ function RegisterPageInner() {
 
                 {/* Form */}
                 <div className="bg-card border rounded-2xl p-6 md:p-8">
+                    {eventCfg.formTitle && (
+                        <h2 className="text-base font-bold mb-4 leading-snug">
+                            {eventCfg.formTitle.split('\n').map((line, i) => (
+                                <span key={i}>{line}{i < eventCfg.formTitle!.split('\n').length - 1 && <br />}</span>
+                            ))}
+                        </h2>
+                    )}
                     {eventCfg.formIntro ? (
                         <div className="text-sm text-muted-foreground mb-6 space-y-2">
                             {eventCfg.formIntro.split('\n\n').map((p, i) => (
