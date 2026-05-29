@@ -52,7 +52,7 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
     '2273': {
         primaryColor: '#170b7e',
         primaryForeground: '#d8cfc7',
-        headerImageUrl: 'https://ia-avecnous.fr/wp-content/uploads/2026/05/header-iaavecnous-v5.png',
+        headerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_ia-avec-nous-rs-mailing-bandeau-01.png',
         footerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_footer.png',
 
         showLinkedIn: false,
