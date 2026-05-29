@@ -188,7 +188,6 @@ function RegisterPageInner() {
             .then((data: EventContactType[]) => {
                 if (Array.isArray(data) && data.length > 0) {
                     setParticipationTypes(data)
-                    setParticipationTypeId(data[0].id_event_contact_type)
                 }
             })
             .catch(() => {})
@@ -563,6 +562,7 @@ function RegisterPageInner() {
                                         onChange={e => setParticipationTypeId(e.target.value)}
                                         className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                                     >
+                                        <option value="">—</option>
                                         {participationTypes.map(t => (
                                             <option key={t.id_event_contact_type} value={t.id_event_contact_type}>
                                                 {t.libelle}
