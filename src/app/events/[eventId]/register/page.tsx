@@ -167,6 +167,7 @@ function RegisterPageInner() {
     const [participationTypeId, setParticipationTypeId] = useState('')
     const [selectedSessions, setSelectedSessions] = useState<string[]>([])
     const [besoinAccessibilite, setBesoinAccessibilite] = useState('')
+    const [isSpeaker, setIsSpeaker] = useState(false)
     const [idDoc, setIdDoc] = useState<{ front: File | null; back: File | null; docType: DocumentType }>({
         front: null, back: null, docType: 'id_card',
     })
@@ -184,7 +185,7 @@ function RegisterPageInner() {
     }, [])
 
     useEffect(() => {
-        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE id_event_contact_type IN (466, 467,468,469,470,471,472,473,474,475,476)')}`)
+        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE cat="sommet-ia"')}`)
             .then(r => r.json())
             .then((data: EventContactType[]) => {
                 if (Array.isArray(data) && data.length > 0) {
@@ -313,7 +314,7 @@ function RegisterPageInner() {
                     const confRes = await fetch(`${API_URL}?action=createConferencier`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id_contact, id_conf_event, statut: participationTypeId || 143, id_event: eventId }),
+                        body: JSON.stringify({ id_contact, id_conf_event, statut: participationTypeId || 143, id_event: eventId, is_speaker: isSpeaker ? 1 : 0 }),
                     })
                     const confRaw = JSON.parse(await confRes.text())
                     const id_conferencier =
@@ -335,7 +336,7 @@ function RegisterPageInner() {
                 const confRes = await fetch(`${API_URL}?action=createConferencier`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_contact, id_conf_event, statut: participationTypeId || 143, id_event: eventId }),
+                    body: JSON.stringify({ id_contact, id_conf_event, statut: participationTypeId || 143, id_event: eventId, is_speaker: isSpeaker ? 1 : 0 }),
                 })
                 const confRaw = JSON.parse(await confRes.text())
                 const id_conferencier =
@@ -673,6 +674,21 @@ function RegisterPageInner() {
                                 placeholder="Ex : fauteuil roulant, interprète LSF…"
                                 className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                             />
+                        </div>
+
+                        {/* Intervenant */}
+                        <div className="sm:col-span-2">
+                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={isSpeaker}
+                                    onChange={e => setIsSpeaker(e.target.checked)}
+                                    className="w-4 h-4 rounded border-input accent-primary cursor-pointer"
+                                />
+                                <span className="text-sm font-semibold">
+                                    Si vous êtes un intervenant, veuillez cocher cette case / If you are a speaker, please tick this box
+                                </span>
+                            </label>
                         </div>
 
                     </form>
