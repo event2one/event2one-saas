@@ -23,11 +23,11 @@ const FIELDS = [
     { key: 'fonction',       label: 'Fonction / Titre',                       required: false, type: 'text'  },
     { key: 'mail',           label: 'Email',                                  required: true,  type: 'email' },
     { key: 'port',           label: 'Mobile',                                 required: false, type: 'tel'   },
-    { key: 'pays',           label: 'Pays',                                   required: false, type: 'text',  placeholder: 'Ex : France, Belgique…'        },
-    { key: 'cp',             label: 'Code postal',                            required: false, type: 'text',  placeholder: 'Ex : 75001'                    },
     { key: 'date_naissance', label: 'Date de naissance',                      required: false, type: 'date'  },
     { key: 'pays_naissance', label: 'Pays de naissance',                      required: false, type: 'text',  placeholder: 'Ex : France, Maroc, Italie…'  },
     { key: 'ville_naissance',label: 'Ville de naissance',                     required: false, type: 'text',  placeholder: 'Ex : Paris, Casablanca, Rome…' },
+    { key: 'pays',           label: 'Pays',                                   required: false, type: 'text',  placeholder: 'Ex : France, Belgique…'        },
+    { key: 'cp',             label: 'Code postal',                            required: false, type: 'text',  placeholder: 'Ex : 75001'                    },
     { key: 'sn_linkedin',    label: 'Profil LinkedIn',                        required: false, type: 'url',  placeholder: 'https://www.linkedin.com/in/...' },
     //{ key: 'punchline',   label: 'Thème / Punchline de votre intervention',required: false, type: 'text', full: true },
 ] as const
@@ -591,7 +591,7 @@ function RegisterPageInner() {
                                         type={type}
                                         required={required}
                                         placeholder={placeholder ?? ''}
-                                        value={form[key]}
+                                        value={form[key] ?? ''}
                                         onChange={e => handleChange(key, e.target.value)}
                                         list={key === 'pays' || key === 'pays_naissance' ? 'pays-naissance-list' : undefined}
                                         className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
