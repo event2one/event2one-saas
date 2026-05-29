@@ -544,10 +544,18 @@ function RegisterPageInner() {
 
                 {/* Form */}
                 <div className="bg-card border rounded-2xl p-6 md:p-8">
-                    <p className="text-sm text-muted-foreground mb-6">
-                        Remplissez le formulaire ci-dessous pour enregistrer votre inscription.
-                        Notre équipe vous recontactera pour confirmer votre participation.
-                    </p>
+                    {eventCfg.formIntro ? (
+                        <div className="text-sm text-muted-foreground mb-6 space-y-2">
+                            {eventCfg.formIntro.split('\n\n').map((p, i) => (
+                                <p key={i}>{p}</p>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground mb-6">
+                            Remplissez le formulaire ci-dessous pour enregistrer votre inscription.
+                            Notre équipe vous recontactera pour confirmer votre participation.
+                        </p>
+                    )}
                     <form id="register-form" onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {participationTypes.length > 0 && (
