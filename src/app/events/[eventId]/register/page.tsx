@@ -17,8 +17,8 @@ const UPLOAD_API_KEY = 'mgv_yt_upload_2026'
 
 
 const FIELDS = [
-    { key: 'prenom',         label: 'Prénom',                                 required: true,  type: 'text'  },
-    { key: 'nom',            label: 'Nom',                                    required: true,  type: 'text'  },
+    { key: 'prenom',         label: 'Prénom / First name',                    required: true,  type: 'text'  },
+    { key: 'nom',            label: 'Nom / Last name',                        required: true,  type: 'text'  },
     { key: 'societe',        label: 'Société',                                required: true,  type: 'text'  },
     { key: 'fonction',       label: 'Fonction / Titre',                       required: false, type: 'text'  },
     { key: 'mail',           label: 'Email',                                  required: true,  type: 'email' },
