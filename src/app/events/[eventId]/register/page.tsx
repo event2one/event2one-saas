@@ -66,12 +66,14 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
     const footerImageUrl = cfg.footerImageUrl
     const eventName = cfg.email?.eventName ?? 'l\'événement'
     const intro = cfg.email?.introText ?? `Nous avons bien reçu votre inscription à ${eventName} et nous vous en remercions.`
+    const salutation = cfg.email?.salutation ?? `Bonjour <strong>${form.prenom} ${form.nom}</strong>,`
     const contactEmail = cfg.email?.contactEmail ?? 'contact@mlg-consulting.com'
     const signatureName = cfg.email?.signatureName ?? 'Notre équipe'
     const closingText = cfg.email?.closingText ?? 'Bien cordialement,'
     const hideBadgeCta = cfg.email?.hideBadgeCta ?? false
     const ctaUrl = cfg.email?.ctaUrl
     const ctaLabel = cfg.email?.ctaLabel ?? 'En savoir plus'
+    const showSignoff = Boolean(closingText || signatureName || contactEmail)
 
     const introParagraphs = intro.split('\n\n')
         .map(p => `<p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;font-family:Verdana,Tahoma,Arial,sans-serif">${p.replace(/\n/g, '<br>')}</p>`)
@@ -107,12 +109,12 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
         </td></tr>`}
         <!-- Body -->
         <tr><td style="padding:40px;font-family:Verdana,Tahoma,Arial,sans-serif">
-          <p style="margin:0 0 16px;font-size:15px;color:#374151;font-family:Verdana,Tahoma,Arial,sans-serif">Bonjour <strong>${form.prenom} ${form.nom}</strong>,</p>
+                    ${salutation ? `<p style="margin:0 0 16px;font-size:15px;color:#374151;font-family:Verdana,Tahoma,Arial,sans-serif">${salutation}</p>` : ''}
           ${introParagraphs}
           ${ctaBlock}
-          <p style="margin:28px 0 0;font-size:14px;color:#6b7280;line-height:1.6;font-family:Verdana,Tahoma,Arial,sans-serif">
-            ${closingText}<br><strong>${signatureName}</strong>${contactEmail ? `<br><a href="mailto:${contactEmail}" style="color:${color};font-family:Verdana,Tahoma,Arial,sans-serif">${contactEmail}</a>` : ''}
-          </p>
+                    ${showSignoff ? `<p style="margin:28px 0 0;font-size:14px;color:#6b7280;line-height:1.6;font-family:Verdana,Tahoma,Arial,sans-serif">
+                        ${closingText}${closingText && (signatureName || contactEmail) ? '<br>' : ''}${signatureName ? `<strong>${signatureName}</strong>` : ''}${contactEmail ? `${signatureName ? '<br>' : ''}<a href="mailto:${contactEmail}" style="color:${color};font-family:Verdana,Tahoma,Arial,sans-serif">${contactEmail}</a>` : ''}
+                    </p>` : ''}
         </td></tr>
         <!-- Footer -->
         ${footerImageUrl
