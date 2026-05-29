@@ -473,7 +473,7 @@ function RegisterPageInner() {
                     style={eventCfg.primaryForeground ? { backgroundColor: eventCfg.primaryForeground } : undefined}
                 >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={eventCfg.headerImageUrl} alt="" className="block h-20 w-auto" />
+                    <img src={eventCfg.headerImageUrl} alt="" className="block h-32 w-auto" />
                 </div>
             )}
             <div className={isEmbed ? 'w-full space-y-6' : 'max-w-xl mx-auto px-4 space-y-6'}>
