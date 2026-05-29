@@ -17,19 +17,20 @@ const UPLOAD_API_KEY = 'mgv_yt_upload_2026'
 
 
 const FIELDS = [
-    { key: 'prenom',         label: 'Prénom / First name',                    required: true,  type: 'text'  },
     { key: 'nom',            label: 'Nom / Last name',                        required: true,  type: 'text'  },
-    { key: 'societe',        label: 'Société / Organisation',                 required: true,  type: 'text'  },
-    { key: 'fonction',       label: 'Fonction / Job title',                   required: false, type: 'text'  },
+    { key: 'prenom',         label: 'Prénom / First name',                    required: true,  type: 'text'  },
     { key: 'mail',           label: 'Email',                                  required: true,  type: 'email' },
-    { key: 'port',           label: 'Mobile / Phone',                         required: false, type: 'tel'   },
-    { key: 'date_naissance', label: 'Date de naissance / Date of birth',      required: false, type: 'date'  },
-    { key: 'pays_naissance', label: 'Pays de naissance / Country of birth',   required: false, type: 'text',  placeholder: 'Ex : France, Morocco, Italy…'  },
-    { key: 'ville_naissance',label: 'Ville de naissance / City of birth',     required: false, type: 'text',  placeholder: 'Ex : Paris, Casablanca, Rome…'  },
+    // ── participation type select is injected here in the JSX ──
+    { key: 'societe',        label: 'Structure / Organization',               required: true,  type: 'text'  },
+    { key: 'fonction',       label: 'Fonction / Job title',                   required: false, type: 'text'  },
     { key: 'pays',           label: 'Pays / Country',                         required: false, type: 'text',  placeholder: 'Ex : France, Belgium…'          },
+    { key: 'ville',          label: 'Ville / City',                           required: false, type: 'text',  placeholder: 'Ex : Lille, Brussels…'           },
+    { key: 'date_naissance', label: 'Date de naissance / Date of birth',      required: false, type: 'date'  },
+    { key: 'port',           label: 'Mobile / Phone',                         required: false, type: 'tel'   },
+    { key: 'pays_naissance', label: 'Pays de naissance / Country of birth',   required: false, type: 'text',  placeholder: 'Ex : France, Morocco, Italy…'   },
+    { key: 'ville_naissance',label: 'Ville de naissance / City of birth',     required: false, type: 'text',  placeholder: 'Ex : Paris, Casablanca, Rome…'  },
     { key: 'cp',             label: 'Code postal / Postcode',                 required: false, type: 'text',  placeholder: 'Ex : 75001'                     },
     { key: 'sn_linkedin',    label: 'Profil LinkedIn / LinkedIn profile',     required: false, type: 'url',  placeholder: 'https://www.linkedin.com/in/...' },
-    //{ key: 'punchline',   label: 'Thème / Punchline de votre intervention',required: false, type: 'text', full: true },
 ] as const
 
 type FieldKey = typeof FIELDS[number]['key']
@@ -557,7 +558,30 @@ function RegisterPageInner() {
                         </p>
                     )}
                     <form id="register-form" onSubmit={handleSubmit} className="space-y-4">
+                        {/* participation type select — rendered inline via JSX injection below */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Group 1 : nom, prenom, mail */}
+                            {FIELDS.filter(f => (['nom','prenom','mail'] as string[]).includes(f.key) && !hiddenFields.has(f.key)).map((field) => {
+                                const { key, label, type } = field
+                                const required = field.required || requiredFields.has(key)
+                                const placeholder = 'placeholder' in field ? field.placeholder : undefined
+                                return (
+                                <div key={key}>
+                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
+                                        {label}{required && <span className="text-destructive">*</span>}
+                                    </label>
+                                    <input
+                                        type={type}
+                                        required={required}
+                                        placeholder={placeholder ?? ''}
+                                        value={form[key] ?? ''}
+                                        onChange={e => handleChange(key, e.target.value)}
+                                        className="w-full border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                                    />
+                                </div>
+                                )
+                            })}
+                            {/* Vous êtes / You are — after Email */}
                             {participationTypes.length > 0 && (
                                 <div className="sm:col-span-2">
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
@@ -579,7 +603,8 @@ function RegisterPageInner() {
                                     </select>
                                 </div>
                             )}
-                            {FIELDS.filter(f => !hiddenFields.has(f.key)).map((field) => {
+                            {/* Group 2 : remaining fields */}
+                            {FIELDS.filter(f => !(['nom','prenom','mail'] as string[]).includes(f.key) && !hiddenFields.has(f.key)).map((field) => {
                                 const { key, label, type } = field
                                 const required = field.required || requiredFields.has(key)
                                 const placeholder = 'placeholder' in field ? field.placeholder : undefined
@@ -683,7 +708,7 @@ function RegisterPageInner() {
                     style={primaryColor ? { backgroundColor: primaryColor, color: primaryForeground ?? '#ffffff' } : undefined}
                     className="w-full py-3 text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-opacity disabled:opacity-50"
                 >
-                    {status === 'submitting' ? 'Envoi en cours… / Sending…' : 'Confirmer mon inscription / Confirm registration'}
+                    {status === 'submitting' ? 'Envoi en cours… / Sending…' : 'Confirmer mon enregistrement / Confirm registration'}
                 </button>
 
                 {/* Mention CNIL */}

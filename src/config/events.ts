@@ -60,7 +60,7 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         showIdDocument: true,
         validationWorkflow: true,
         requireIdDocument: true,
-        hiddenFields: ['sn_linkedin', 'port', 'pays_naissance', 'ville_naissance'],
+        hiddenFields: ['sn_linkedin', 'port', 'fonction', 'cp', 'pays_naissance', 'ville_naissance'],
         requiredFields: ['date_naissance'],
         formIntro: 'Remplissez le formulaire ci-dessous pour enregistrer votre inscription. Attention vous devrez impérativement confirmer votre présence 4 jours avant l\'événement, soit le lundi 8 juin pour finaliser votre inscription et recevoir votre badge.\n\nPlease fill in the form below to register your attendance. Please note that you will be required to confirm your presence 4 days before the event — on Monday, June 8th — in order to finalise your registration and receive your badge.',
         confirmationTitle: 'Enregistrement confirmé !',
