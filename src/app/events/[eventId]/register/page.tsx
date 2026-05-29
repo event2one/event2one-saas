@@ -561,7 +561,7 @@ function RegisterPageInner() {
                             {participationTypes.length > 0 && (
                                 <div className="sm:col-span-2">
                                     <label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1.5">
-                                        Vous représentez ?
+                                        Vous êtes / You are :
                                         <span className="text-destructive">*</span>
                                     </label>
                                     <select
