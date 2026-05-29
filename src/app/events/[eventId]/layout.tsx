@@ -1,6 +1,7 @@
 import { Calendar, MapPin } from 'lucide-react'
 import { API_URL } from '@/utils/api'
 import { getEventTheme } from '@/config/event-themes'
+import { EVENT_CONFIG } from '@/config/events'
 
 const DIR_EVENT_IMG = 'https://www.mlg-consulting.com/manager_cc/docs/img_uploaded/'
 

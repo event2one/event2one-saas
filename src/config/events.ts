@@ -36,6 +36,7 @@ export type EventConfig = {
         subject?: string
         logoUrl?: string
         eventName?: string
+        salutation?: string
         introText?: string
         fromName?: string
         replyTo?: string
@@ -72,7 +73,8 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         email: {
             subject: 'Pré-inscription confirmée — Sommet « L\'IA avec NOUS » — 12 juin 2026',
             eventName: 'Sommet « L\'IA avec NOUS »',
-            introText: 'Votre pré-inscription au Sommet européen « L\'IA avec NOUS » est bien enregistrée.\n\n<span style="color:#dc2626;font-style:italic">Vous recevrez un mail quatre jours avant l\'événement pour confirmer définitivement votre inscription. Les places étant limitées, pensez à répondre sous 48h — vous recevrez votre billet avec QR Code suite à cette confirmation.</span>\n\nLe programme s\'annonce riche et dense. Nous vous recommandons de <strong>bloquer l\'intégralité de votre journée</strong> <em>pour profiter de tous les temps forts</em>. Une zone dédiée sera disponible pour assurer vos visioconférences et répondre à quelques mails ;) La journée se clôturera par un <strong>cocktail festif à partir de 18h30</strong> — nous vous invitons à rester avec nous pour en profiter pleinement.\n\nA noter également que le programme est susceptible d\'évoluer jusqu\'au jour J en raison de contraintes liées à l\'agenda de certains de nos officiels.\n\nRetrouvez le programme complet et la liste des intervenants sur <strong><a href="https://ia-avecnous.fr" style="color:#170b7e">ia-avecnous.fr</a></strong>',
+            salutation: 'Bonjour,',
+            introText: 'Votre pré-inscription au Sommet européen « L\'IA avec NOUS » est bien enregistrée.\n\nVous recevrez un mail quatre jours avant l\'événement pour confirmer définitivement votre inscription. Les places étant limitées, pensez à répondre sous 48h — vous recevrez votre billet avec QR Code suite à cette confirmation.\n\nLe programme s\'annonce riche et dense. Nous vous recommandons de bloquer l\'intégralité de votre journée pour profiter de tous les temps forts. Une zone dédiée sera disponible pour assurer vos visioconférences et répondre à quelques mails ;) La journée se clôturera par un cocktail festif à partir de 18h30 — nous vous invitons à rester avec nous pour en profiter pleinement.\n\nA noter également que le programme est susceptible d\'évoluer jusqu\'au jour J en raison de contraintes liées à l\'agenda de certains de nos officiels.\n\nRetrouvez le programme complet et la liste des intervenants sur <a href="https://ia-avecnous.fr" style="color:#170b7e">ia-avecnous.fr</a>',
             fromName: 'Grand Sommet IA avec Nous',
             replyTo: 'contact@ia-avecnous.fr',
             contactEmail: 'contact@ia-avecnous.fr',
