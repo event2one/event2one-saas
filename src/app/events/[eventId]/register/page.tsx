@@ -187,11 +187,18 @@ function RegisterPageInner() {
     }, [])
 
     useEffect(() => {
-        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE cat="sommet-ia"')}`)
+        fetch(`${API_URL}?action=getEventContactTypeList&filter=${encodeURIComponent('WHERE cat="sommet-ia"')} ORDER BY libelle ASC`)
             .then(r => r.json())
             .then((data: EventContactType[]) => {
                 if (Array.isArray(data) && data.length > 0) {
-                    setParticipationTypes(data)
+                    const sorted = [...data].sort((a, b) => {
+                        const aIsAutre = /autre/i.test(a.libelle)
+                        const bIsAutre = /autre/i.test(b.libelle)
+                        if (aIsAutre && !bIsAutre) return 1
+                        if (!aIsAutre && bIsAutre) return -1
+                        return 0
+                    })
+                    setParticipationTypes(sorted)
                 }
             })
             .catch(() => {})
