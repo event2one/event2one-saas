@@ -11,6 +11,8 @@ export type EventConfig = {
     showLinkedIn?: boolean
     showProgram?: boolean
     showBadgePhoto?: boolean
+    /** Hide the sticky layout header bar on event pages (default: true = visible) */
+    showLayoutHeader?: boolean
     /** Zoom factor applied to confirmation page content (e.g. 1.15 = +15%) */
     fontSizeZoom?: number
     showIdDocument?: boolean
@@ -59,6 +61,7 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         showLinkedIn: false,
         showProgram: false,
         showBadgePhoto: false,
+        showLayoutHeader: false,
         fontSizeZoom: 1.15,
         showIdDocument: false,
         validationWorkflow: true,

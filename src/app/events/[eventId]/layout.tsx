@@ -83,53 +83,55 @@ export default async function EventLayout({
                 `}</style>
             )}
             <div className="event-theme">
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
-                <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-4">
-                    {/* Logo */}
-                    <div className="shrink-0">
-                        {logoSrc ? (
-                            <img
-                                src={logoSrc}
-                                alt={event?.nom ?? 'Logo'}
-                                className="h-8 w-auto max-w-[120px] object-contain"
-                            />
-                        ) : (
-                            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                                {event?.nom?.[0]?.toUpperCase() ?? 'E'}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-5 w-px bg-border shrink-0" />
-
-                    {/* Event info */}
-                    <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-foreground truncate leading-tight">
-                            {event?.nom ?? 'Événement'}
-                        </p>
-                        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-0.5">
-                            {formattedDate && (
-                                <span className="flex items-center gap-1">
-                                    <Calendar size={11} />
-                                    {formattedDate}
-                                </span>
-                            )}
-                            {lieuLabel && (
-                                <span className="flex items-center gap-1">
-                                    <MapPin size={11} />
-                                    {lieuLabel}
-                                </span>
+            {(EVENT_CONFIG[eventId]?.showLayoutHeader ?? true) && (
+                <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+                    <div className="max-w-4xl mx-auto px-6 h-14 flex items-center gap-4">
+                        {/* Logo */}
+                        <div className="shrink-0">
+                            {logoSrc ? (
+                                <img
+                                    src={logoSrc}
+                                    alt={event?.nom ?? 'Logo'}
+                                    className="h-8 w-auto max-w-[120px] object-contain"
+                                />
+                            ) : (
+                                <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
+                                    {event?.nom?.[0]?.toUpperCase() ?? 'E'}
+                                </div>
                             )}
                         </div>
-                    </div>
 
-                    {/* Brand */}
-                    <span className="shrink-0 text-xs font-semibold tracking-wide text-muted-foreground/60 select-none">
-                        event2one
-                    </span>
-                </div>
-            </header>
+                        {/* Divider */}
+                        <div className="h-5 w-px bg-border shrink-0" />
+
+                        {/* Event info */}
+                        <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate leading-tight">
+                                {event?.nom ?? 'Événement'}
+                            </p>
+                            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-0.5">
+                                {formattedDate && (
+                                    <span className="flex items-center gap-1">
+                                        <Calendar size={11} />
+                                        {formattedDate}
+                                    </span>
+                                )}
+                                {lieuLabel && (
+                                    <span className="flex items-center gap-1">
+                                        <MapPin size={11} />
+                                        {lieuLabel}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Brand */}
+                        <span className="shrink-0 text-xs font-semibold tracking-wide text-muted-foreground/60 select-none">
+                            event2one
+                        </span>
+                    </div>
+                </header>
+            )}
 
             {children}
             </div>
