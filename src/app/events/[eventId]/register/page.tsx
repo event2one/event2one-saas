@@ -469,7 +469,7 @@ function RegisterPageInner() {
 
     return (
         <div className={isEmbed ? 'bg-background px-4 py-8' : 'min-h-screen bg-background py-12'}>
-            {eventCfg.headerImageUrl && (
+            {(eventCfg.showLayoutHeader ?? true) && eventCfg.headerImageUrl && (
                 <div
                     className="w-full mb-8 px-8 py-4"
                     style={eventCfg.primaryForeground ? { backgroundColor: eventCfg.primaryForeground } : undefined}
