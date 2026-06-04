@@ -61,7 +61,6 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         showLinkedIn: false,
         showProgram: false,
         showBadgePhoto: false,
-        showLayoutHeader: false,
         fontSizeZoom: 1.15,
         showIdDocument: false,
         validationWorkflow: true,

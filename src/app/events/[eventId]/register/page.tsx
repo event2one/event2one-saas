@@ -469,15 +469,6 @@ function RegisterPageInner() {
 
     return (
         <div className={isEmbed ? 'bg-background px-4 py-8' : 'min-h-screen bg-background py-12'}>
-            {!isEmbed && eventCfg.headerImageUrl && (
-                <div
-                    className="w-full mb-8 px-8 py-4"
-                    style={eventCfg.primaryForeground ? { backgroundColor: eventCfg.primaryForeground } : undefined}
-                >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={eventCfg.headerImageUrl} alt="" className="block h-32 w-auto" />
-                </div>
-            )}
             <div className={isEmbed ? 'w-full space-y-6' : 'max-w-xl mx-auto px-4 space-y-6'}>
 
                 <div>
