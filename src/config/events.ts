@@ -6,6 +6,7 @@ export type EventConfig = {
     primaryForeground?: string
     headerImageUrl?: string
     footerImageUrl?: string
+    badgePartnersImageUrl?: string
 
     // ── Register page ─────────────────────────────────────────────────────────
     showLinkedIn?: boolean
@@ -57,6 +58,7 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         primaryForeground: '#d8cfc7',
         headerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_ia-avec-nous-rs-mailing-bandeau-01.png',
         footerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_footer.png',
+        badgePartnersImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260605173331_partenaires-e-billet.png',
 
         showLinkedIn: false,
         showProgram: false,

@@ -96,10 +96,10 @@ export default function PrintBadgePage() {
     )
 
     const badgeCfg = EVENT_CONFIG[eventId] ?? {}
-    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} showPhoto={badgeCfg.showBadgePhoto ?? false} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} />
+    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} showPhoto={badgeCfg.showBadgePhoto ?? false} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} partnersImageUrl={badgeCfg.badgePartnersImageUrl} />
 }
 
-function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, headerImageUrl, footerImageUrl }: {
+function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, headerImageUrl, footerImageUrl, partnersImageUrl }: {
     c: Contact
     event: EventData | null
     eventId: string
@@ -108,6 +108,7 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
     roleBadge?: string
     showPhoto?: boolean
     headerImageUrl?: string
+    partnersImageUrl?: string
     footerImageUrl?: string
 }) {
     const fullName = `${c.prenom} ${c.nom}`.toUpperCase()
@@ -226,6 +227,10 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
                         <br /><div style={{ fontWeight: 700 }}>4/ Nous recyclons vos badges !</div>
                         <br /><div style={{ color: '#888', fontSize: '7pt' }}>Le port du badge est obligatoire. Bonne visite !</div>
                     </div>
+                    {partnersImageUrl && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={partnersImageUrl} alt="" style={{ width: '100%', display: 'block', marginTop: '2mm' }} />
+                    )}
                     <div style={{ fontSize: '6.5pt', color: '#bbb', borderTop: '0.5px solid #eee', paddingTop: '2mm' }}>
                         Une solution event2one — www.event2one.com
                     </div>
