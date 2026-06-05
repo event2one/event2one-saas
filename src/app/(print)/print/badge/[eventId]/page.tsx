@@ -218,14 +218,14 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
                 </div>
 
                 {/* BL — instructions (rot 180°) */}
-                <div style={{ ...zone, borderRight: '1px dashed #bbb', transform: 'rotate(180deg)', display: 'flex', flexDirection: 'column', padding: '6mm', gap: '3mm' }}>
-                    <div style={{ fontWeight: 900, fontSize: '9pt', color: accent, textTransform: 'uppercase' }}>Votre badge d&apos;accès rapide</div>
-                    <div style={{ fontSize: '8pt', color: '#333', lineHeight: 1.7, flex: 1 }}>
+                <div style={{ ...zone, borderRight: '1px dashed #bbb', transform: 'rotate(180deg)', display: 'flex', flexDirection: 'column', padding: '4mm', gap: '1.5mm' }}>
+                    <div style={{ fontWeight: 900, fontSize: '7.5pt', color: accent, textTransform: 'uppercase', marginBottom: '1mm' }}>Votre badge d&apos;accès rapide</div>
+                    <div style={{ fontSize: '7pt', color: '#333', lineHeight: 1.5, flex: 1 }}>
                         <div>1/ Imprimez votre badge et munissez-vous en pour accéder à l&apos;événement.</div>
-                        <br /><div>2/ <strong>Pliez-le en 4</strong> et insérez-le dans le porte-badge.</div>
-                        <br /><div>3/ Conservez-le précieusement : il vous sera demandé à chaque entrée.</div>
-                        <br /><div style={{ fontWeight: 700 }}>4/ Nous recyclons vos badges !</div>
-                        <br /><div style={{ color: '#888', fontSize: '7pt' }}>Le port du badge est obligatoire. Bonne visite !</div>
+                        <div style={{ marginTop: '1.5mm' }}>2/ <strong>Pliez-le en 4</strong> et insérez-le dans le porte-badge.</div>
+                        <div style={{ marginTop: '1.5mm' }}>3/ Conservez-le précieusement : il vous sera demandé à chaque entrée.</div>
+                        <div style={{ marginTop: '1.5mm', fontWeight: 700 }}>4/ Nous recyclons vos badges !</div>
+                        <div style={{ marginTop: '1.5mm', color: '#888', fontSize: '6.5pt' }}>Le port du badge est obligatoire. Bonne visite !</div>
                     </div>
                     {partnersImageUrl && (
                         /* eslint-disable-next-line @next/next/no-img-element */
