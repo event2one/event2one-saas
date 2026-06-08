@@ -70,7 +70,7 @@ function buildConfirmationHtml(cfg: EventConfig, form: FormState, badgeUrl: stri
     const contactEmail = cfg.email?.contactEmail ?? 'contact@mlg-consulting.com'
     const signatureName = cfg.email?.signatureName ?? 'Notre équipe'
     const closingText = cfg.email?.closingText ?? 'Bien cordialement,'
-    const hideBadgeCta = cfg.email?.hideBadgeCta ?? false
+    const hideBadgeCta = (cfg.badgeDelivery ?? 'moderated') !== 'direct'
     const ctaUrl = cfg.email?.ctaUrl
     const ctaLabel = cfg.email?.ctaLabel ?? 'En savoir plus'
     const showSignoff = Boolean(closingText || signatureName || contactEmail)
