@@ -6,7 +6,11 @@ export type EventConfig = {
     primaryForeground?: string
     headerImageUrl?: string
     footerImageUrl?: string
+    /** Override du pied de page du e-badge uniquement (TR) — si absent, utilise footerImageUrl */
+    badgeFooterImageUrl?: string
     badgePartnersImageUrl?: string
+    /** Override du panneau "programme" (TL) du e-badge — libellé + texte (supporte \n\n pour les paragraphes) */
+    badgeProgramPanel?: { label?: string; text: string }
     /** Masque le panneau bas-droit (dos vCard) du badge A4 */
     hideBadgeBackPanel?: boolean
 
@@ -68,7 +72,12 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         primaryForeground: '#d8cfc7',
         headerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_ia-avec-nous-rs-mailing-bandeau-01.png',
         footerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_footer.png',
-        badgePartnersImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260605173331_partenaires-e-billet.png',
+        badgeFooterImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260608180332_sans-titre-08-juin-2026-18.00.47.png',
+        badgePartnersImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260608175408_sans-titre-05-juin-2026-16.32.55.png',
+        badgeProgramPanel: {
+            label: 'Se rendre au sommet',
+            text: 'Retrouvez toutes les informations pour vous rendre au Sommet sur https://ia-avecnous.fr/grand-sommet/lieu/\n\nFind all the information on how to get to the Summit at https://ia-avecnous.fr/grand-sommet/lieu/',
+        },
         hideBadgeBackPanel: true,
 
         registrationClosed: {

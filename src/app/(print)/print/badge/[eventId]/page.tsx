@@ -96,10 +96,10 @@ export default function PrintBadgePage() {
     )
 
     const badgeCfg = EVENT_CONFIG[eventId] ?? {}
-    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} showPhoto={badgeCfg.showBadgePhoto ?? false} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} partnersImageUrl={badgeCfg.badgePartnersImageUrl} hideBackPanel={badgeCfg.hideBadgeBackPanel ?? false} />
+    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} showPhoto={badgeCfg.showBadgePhoto ?? false} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.badgeFooterImageUrl ?? badgeCfg.footerImageUrl} partnersImageUrl={badgeCfg.badgePartnersImageUrl} programPanel={badgeCfg.badgeProgramPanel} hideBackPanel={badgeCfg.hideBadgeBackPanel ?? false} />
 }
 
-function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, headerImageUrl, footerImageUrl, partnersImageUrl, hideBackPanel }: {
+function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, headerImageUrl, footerImageUrl, partnersImageUrl, programPanel, hideBackPanel }: {
     c: Contact
     event: EventData | null
     eventId: string
@@ -110,6 +110,7 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
     headerImageUrl?: string
     partnersImageUrl?: string
     footerImageUrl?: string
+    programPanel?: { label?: string; text: string }
     hideBackPanel?: boolean
 }) {
     const fullName = `${c.prenom} ${c.nom}`.toUpperCase()
@@ -169,9 +170,11 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
                     <div style={{ flex: 1, padding: '5mm 6mm', display: 'flex', flexDirection: 'column', gap: '3mm', fontSize: '8pt', color: '#333' }}>
                         {eventDate && <div><strong>Date :</strong> {eventDate}</div>}
                         {venue && <div><strong>Lieu :</strong> {venue}</div>}
-                        <div style={{ fontWeight: 'bold', color: accent, textTransform: 'uppercase', fontSize: '7.5pt' }}>Votre programme</div>
+                        <div style={{ fontWeight: 'bold', color: accent, textTransform: 'uppercase', fontSize: '7.5pt' }}>{programPanel?.label ?? 'Votre programme'}</div>
                         <div style={{ flex: 1, borderTop: `1px solid ${accent}33`, paddingTop: '3mm', color: '#888', fontSize: '7pt', fontStyle: 'italic', lineHeight: 1.6 }}>
-                            Consultez votre programme sur votre espace personnel event2one.
+                            {(programPanel?.text ?? 'Consultez votre programme sur votre espace personnel event2one.').split('\n\n').map((para, i) => (
+                                <p key={i} style={{ margin: i === 0 ? 0 : '2mm 0 0' }}>{para}</p>
+                            ))}
                         </div>
                         <div style={{ textAlign: 'center', marginTop: 'auto' }}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
