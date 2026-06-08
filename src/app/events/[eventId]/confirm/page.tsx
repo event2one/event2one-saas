@@ -54,6 +54,7 @@ function buildTicketEmailHtml(cfg: EventConfig, contact: Contact, badgeUrl: stri
         <tr><td style="padding:40px;font-family:${FONT}">
           <p style="margin:0 0 16px;font-size:15px;color:#374151;font-family:${FONT}">Bonjour <strong>${contact.prenom} ${contact.nom}</strong>,</p>
           <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;font-family:${FONT}">Merci pour votre réponse — votre présence à <strong>${eventName}</strong> est désormais définitivement confirmée.</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#dc2626;font-weight:bold;line-height:1.6;font-family:${FONT}">Places limitées dans l'Atrium principal — L'accès à la salle principale est réservé aux premiers arrivés sur place, dans la limite des capacités d'accueil. Des espaces de retransmission en direct seront disponibles pour les autres participants.</p>
           <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;font-family:${FONT}">Voici votre billet d'entrée définitif avec QR Code : imprimez-le ou présentez-le directement depuis votre téléphone à l'accueil le jour J.</p>
           ${badgeBlock}
           <p style="margin:8px 0 0;font-size:14px;color:#6b7280;line-height:1.6;font-family:${FONT}">
