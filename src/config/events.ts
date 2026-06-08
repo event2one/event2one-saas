@@ -7,6 +7,8 @@ export type EventConfig = {
     headerImageUrl?: string
     footerImageUrl?: string
     badgePartnersImageUrl?: string
+    /** Masque le panneau bas-droit (dos vCard) du badge A4 */
+    hideBadgeBackPanel?: boolean
 
     // ── Register page ─────────────────────────────────────────────────────────
     showLinkedIn?: boolean
@@ -35,6 +37,14 @@ export type EventConfig = {
     formIntro?: string
     confirmationTitle?: string
     confirmationMessage?: string
+    /** Si renseigné, affiche un message de clôture à la place du formulaire d'inscription */
+    registrationClosed?: {
+        title?: string
+        introText?: string
+        ctaUrl?: string
+        ctaLabel?: string
+        outroText?: string
+    }
     email?: {
         subject?: string
         logoUrl?: string
@@ -59,6 +69,15 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
         headerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_ia-avec-nous-rs-mailing-bandeau-01.png',
         footerImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260519175100_footer.png',
         badgePartnersImageUrl: 'https://www.mlg-consulting.com/manager_cc/docs/archives/260605173331_partenaires-e-billet.png',
+        hideBadgeBackPanel: true,
+
+        registrationClosed: {
+            title: 'Inscriptions closes',
+            introText: 'Grand succès pour notre Sommet de l\'IA avec Nous ! Vous êtes déjà plus de 2000 inscrits. La plateforme d\'accès direct aux inscriptions est désormais fermée mais vous pouvez toujours faire une demande d\'invitation via ce formulaire.',
+            ctaUrl: 'https://ia-avecnous.fr/grand-sommet/participer/',
+            ctaLabel: 'Faire une demande d\'invitation',
+            outroText: 'Nous traiterons les demandes au cas par cas.',
+        },
 
         showLinkedIn: false,
         showProgram: false,

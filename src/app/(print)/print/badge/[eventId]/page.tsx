@@ -96,10 +96,10 @@ export default function PrintBadgePage() {
     )
 
     const badgeCfg = EVENT_CONFIG[eventId] ?? {}
-    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} showPhoto={badgeCfg.showBadgePhoto ?? false} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} partnersImageUrl={badgeCfg.badgePartnersImageUrl} />
+    return <BadgeA4 c={contact} event={event} eventId={eventId} accent={accent} qrData={qrData ?? undefined} roleBadge={roleBadge ?? undefined} showPhoto={badgeCfg.showBadgePhoto ?? false} headerImageUrl={badgeCfg.headerImageUrl} footerImageUrl={badgeCfg.footerImageUrl} partnersImageUrl={badgeCfg.badgePartnersImageUrl} hideBackPanel={badgeCfg.hideBadgeBackPanel ?? false} />
 }
 
-function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, headerImageUrl, footerImageUrl, partnersImageUrl }: {
+function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, headerImageUrl, footerImageUrl, partnersImageUrl, hideBackPanel }: {
     c: Contact
     event: EventData | null
     eventId: string
@@ -110,6 +110,7 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
     headerImageUrl?: string
     partnersImageUrl?: string
     footerImageUrl?: string
+    hideBackPanel?: boolean
 }) {
     const fullName = `${c.prenom} ${c.nom}`.toUpperCase()
     const society = (c.societe || '').toUpperCase()
@@ -237,18 +238,21 @@ function BadgeA4({ c, event, eventId, accent, qrData, roleBadge, showPhoto, head
                 </div>
 
                 {/* BR — dos vCard (rot 180°) */}
-                <div style={{ ...zone, transform: 'rotate(180deg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '6mm', gap: '3.5mm', textAlign: 'center' }}>
-                    <div style={{ background: accent, color: '#fff', padding: '2.5mm 5mm', fontSize: '8pt', fontWeight: 900, borderRadius: '1mm' }}>
-                        PARTAGEZ VOS COORDONNÉES
+                {hideBackPanel
+                    ? <div style={zone} />
+                    : <div style={{ ...zone, transform: 'rotate(180deg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '6mm', gap: '3.5mm', textAlign: 'center' }}>
+                        <div style={{ background: accent, color: '#fff', padding: '2.5mm 5mm', fontSize: '8pt', fontWeight: 900, borderRadius: '1mm' }}>
+                            PARTAGEZ VOS COORDONNÉES
+                        </div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={qrVcard} alt="vCard" style={{ width: '32mm', height: '32mm' }} />
+                        <div style={{ fontSize: '9pt', fontWeight: 700, color: '#222' }}>{c.prenom} {c.nom}</div>
+                        {c.societe && <div style={{ fontSize: '8pt', color: '#555' }}>{c.societe}</div>}
+                        {c.fonction_nom && <div style={{ fontSize: '7pt', color: '#888' }}>{c.fonction_nom}</div>}
+                        <div style={{ fontSize: '6.5pt', color: '#aaa', marginTop: '2mm' }}>Scannez pour enregistrer le contact</div>
+                        <div style={{ fontSize: '6pt', color: '#ccc', marginTop: 'auto' }}>event2one — Professional Event Management</div>
                     </div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={qrVcard} alt="vCard" style={{ width: '32mm', height: '32mm' }} />
-                    <div style={{ fontSize: '9pt', fontWeight: 700, color: '#222' }}>{c.prenom} {c.nom}</div>
-                    {c.societe && <div style={{ fontSize: '8pt', color: '#555' }}>{c.societe}</div>}
-                    {c.fonction_nom && <div style={{ fontSize: '7pt', color: '#888' }}>{c.fonction_nom}</div>}
-                    <div style={{ fontSize: '6.5pt', color: '#aaa', marginTop: '2mm' }}>Scannez pour enregistrer le contact</div>
-                    <div style={{ fontSize: '6pt', color: '#ccc', marginTop: 'auto' }}>event2one — Professional Event Management</div>
-                </div>
+                }
             </div>
         </>
     )

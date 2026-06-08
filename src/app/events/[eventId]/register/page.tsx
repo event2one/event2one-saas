@@ -425,6 +425,48 @@ function RegisterPageInner() {
         }
     }
 
+    // ─── Registration closed ─────────────────────────────────────────────────
+
+    if (eventCfg.registrationClosed) {
+        const { title, introText, ctaUrl, ctaLabel, outroText } = eventCfg.registrationClosed
+        return (
+            <div className={isEmbed ? 'bg-background py-4 mx-auto max-w-2xl' : 'min-h-screen bg-background px-4 py-12'}>
+                <div className={`bg-card border rounded-2xl overflow-hidden text-center ${isEmbed ? 'w-full' : 'max-w-xl w-full mx-auto'}`}>
+                    {eventCfg.headerImageUrl && (
+                        <img src={eventCfg.headerImageUrl} alt="" className="w-full block" />
+                    )}
+                    <div className="px-8 py-6 space-y-4" style={eventCfg.fontSizeZoom ? { zoom: eventCfg.fontSizeZoom } : undefined}>
+                        <h1 className="text-xl font-bold">{title ?? 'Inscriptions closes'}</h1>
+                        {introText && <p className="text-muted-foreground text-sm text-left">{introText}</p>}
+                        {ctaUrl && (
+                            <a
+                                href={ctaUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={primaryColor ? { backgroundColor: primaryColor, color: primaryForeground ?? '#ffffff' } : undefined}
+                                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-opacity"
+                            >
+                                {ctaLabel ?? 'En savoir plus'}
+                            </a>
+                        )}
+                        {outroText && <p className="text-muted-foreground text-sm text-left">{outroText}</p>}
+                        {!isEmbed && (
+                            <Link
+                                href={`/events/${eventId}`}
+                                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mt-2"
+                            >
+                                <ArrowLeft size={14} /> Retour à l&apos;événement
+                            </Link>
+                        )}
+                    </div>
+                    {eventCfg.footerImageUrl && (
+                        <img src={eventCfg.footerImageUrl} alt="" className="w-full block" />
+                    )}
+                </div>
+            </div>
+        )
+    }
+
     // ─── Success screen ──────────────────────────────────────────────────────
 
     if (status === 'done') {
