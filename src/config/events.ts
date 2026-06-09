@@ -86,7 +86,12 @@ export const EVENT_CONFIG: Record<string, EventConfig> = {
             text: 'Retrouvez toutes les informations pour vous rendre au Sommet sur https://ia-avecnous.fr/grand-sommet/lieu/\n\nFind all the information on how to get to the Summit at https://ia-avecnous.fr/grand-sommet/lieu/',
         },
         hideBadgeBackPanel: true,
-        badgeDelivery: 'direct',
+        badgeDelivery: 'moderated',
+
+        registrationClosed: {
+            title: 'Inscriptions closes',
+            introText: 'Grand succès pour notre Sommet de l\'IA avec Nous ! Vous êtes déjà plus de 2000 inscrits. La plateforme d\'accès direct aux inscriptions est désormais fermée.',
+        },
 
         showLinkedIn: false,
         showProgram: false,
