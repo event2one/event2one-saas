@@ -31,6 +31,14 @@ type EventData = {
     lieu?: { lieu_nom?: string; lieu_ville?: string }
 }
 
+function trackBadgeDisplay(eventId: string, idContact: string, source: 'badge_page' | 'print_token') {
+    fetch('/saas/api/badge/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_event: eventId, id_contact: idContact, source }),
+    }).catch(() => { })
+}
+
 // ─── Badge A4 pliable en 4 ───────────────────────────────────────────────────
 //
 //  Disposition sur la feuille A4 portrait (210mm × 297mm) :
@@ -284,7 +292,10 @@ function EBadgeGeneratorInner() {
                 fetch(`${API_URL}?action=getPartenairesLight&params=${params}`)
                     .then(r => r.json())
                     .then((contacts: Partner[]) => {
-                        if (Array.isArray(contacts) && contacts[0]) setSelected(contacts[0])
+                        if (Array.isArray(contacts) && contacts[0]) {
+                            setSelected(contacts[0])
+                            trackBadgeDisplay(eventId, contacts[0].contact.id_contact, 'badge_page')
+                        }
                         else setTokenError('Contact introuvable pour cet événement')
                     })
                     .catch(() => setTokenError('Erreur lors du chargement du contact'))
@@ -399,6 +410,7 @@ function EBadgeGeneratorInner() {
                                             key={c.id_contact}
                                             onClick={() => {
                                                 setSelected(p)
+                                                trackBadgeDisplay(eventId, c.id_contact, 'badge_page')
                                                 if (!event) loadEvent()
                                                 // Obtenir le QR signé pour ce contact
                                                 fetch('/saas/api/badge/token', {

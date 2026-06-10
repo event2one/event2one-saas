@@ -60,6 +60,11 @@ export default function PrintBadgePage() {
                 if (Array.isArray(parts) && parts[0]) {
                     setContact(parts[0].contact)
                     if (parts[0].conferencier_statut?.libelle) setRoleBadge(parts[0].conferencier_statut.libelle)
+                    fetch('/saas/api/badge/track', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id_event: data.id_event, id_contact: data.id_contact, source: 'print_token' }),
+                    }).catch(() => { })
                 } else { setError('Contact introuvable'); return }
 
                 const ev = Array.isArray(events) ? events[0] : events

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Loader2, RefreshCw, Mail, Linkedin, QrCode, Pencil } from 'lucide-react'
+import { Loader2, RefreshCw, Mail, Linkedin, QrCode, Pencil, CreditCard } from 'lucide-react'
 import { API_URL } from '@/utils/api'
 import { VALIDATION_STATUTS, type ValidationStatus } from '@/lib/validation-constants'
 
@@ -63,6 +63,12 @@ interface ContactGroup {
 interface CheckinRecord {
     id_contact: string
     scanned_at?: string
+}
+
+interface BadgeTrackingInfo {
+    first_displayed_at: string
+    last_displayed_at: string
+    count: number
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -138,6 +144,20 @@ function CheckinBadge({ scan }: { scan: CheckinRecord }) {
     )
 }
 
+// ─── BadgeViewedBadge ───────────────────────────────────────────────────────────
+
+function BadgeViewedBadge({ tracking }: { tracking: BadgeTrackingInfo }) {
+    return (
+        <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-700 text-xs font-medium shrink-0"
+            title={`E-badge affiché ${tracking.count > 1 ? `${tracking.count} fois — ` : ''}dernière fois le ${tracking.last_displayed_at}`}
+        >
+            <CreditCard className="w-3 h-3" />
+            Badge vu{tracking.count > 1 ? ` ×${tracking.count}` : ''}
+        </span>
+    )
+}
+
 // ─── SessionPill ──────────────────────────────────────────────────────────────
 
 function SessionPill({ session }: { session: ConfEventLight }) {
@@ -162,6 +182,7 @@ function InscritsListItem({
     group,
     idEvent,
     scan,
+    badgeView,
     validationWorkflow,
     validationStatus,
     validationSaving,
@@ -170,6 +191,7 @@ function InscritsListItem({
     group: ContactGroup
     idEvent: string
     scan: CheckinRecord | null
+    badgeView: BadgeTrackingInfo | null
     validationWorkflow?: boolean
     validationStatus?: ValidationStatus
     validationSaving?: boolean
@@ -243,6 +265,7 @@ function InscritsListItem({
                         )
                     })}
                     {scan && <CheckinBadge scan={scan} />}
+                    {badgeView && <BadgeViewedBadge tracking={badgeView} />}
                 </div>
                 <div className="text-xs text-zinc-400 truncate mt-0.5">
                     {[contact.fonction, contact.societe].filter(Boolean).join(' · ')}
@@ -322,6 +345,7 @@ export default function InscritsList({ eventId, validationWorkflow }: InscritsLi
     const [rows, setRows] = useState<RegistrationRow[]>([])
     const [sessions, setSessions] = useState<ConfEventLight[]>([])
     const [checkinMap, setCheckinMap] = useState<Record<string, CheckinRecord>>({})
+    const [badgeTrackingMap, setBadgeTrackingMap] = useState<Record<string, BadgeTrackingInfo>>({})
     const [validationMap, setValidationMap] = useState<Record<string, ValidationStatus>>({})
     const [validationSaving, setValidationSaving] = useState<Set<string>>(new Set())
     const [loading, setLoading] = useState(true)
@@ -355,6 +379,7 @@ export default function InscritsList({ eventId, validationWorkflow }: InscritsLi
             fetch(`${API_URL}?action=getPartenairesLight&params=${encodeURIComponent(` AND cf.id_event=${eventId}`)}&order_by=nom ASC`).then(r => r.json()),
             fetch(`${API_URL}?action=getConfeventLight&filter=${encodeURIComponent(` AND e.id_event=${eventId}`)}`).then(r => r.json()),
             fetch(`${CHECKIN_API_URL}?action=getCheckinList&id_event=${eventId}`).then(r => r.json()),
+            fetch(`/saas/api/badge/track?id_event=${eventId}`).then(r => r.json()).catch(() => ({})),
         ]
 
         if (validationWorkflow) {
@@ -364,7 +389,7 @@ export default function InscritsList({ eventId, validationWorkflow }: InscritsLi
         }
 
         Promise.all(fetches)
-            .then(([regsData, sessionsData, checkinsData, validationData]) => {
+            .then(([regsData, sessionsData, checkinsData, badgeTrackingData, validationData]) => {
                 setRows(Array.isArray(regsData) ? regsData as RegistrationRow[] : [])
                 setSessions(Array.isArray(sessionsData) ? sessionsData as ConfEventLight[] : [])
                 if (Array.isArray(checkinsData)) {
@@ -372,6 +397,9 @@ export default function InscritsList({ eventId, validationWorkflow }: InscritsLi
                     ;(checkinsData as CheckinRecord[]).forEach(c => { if (!map[c.id_contact]) map[c.id_contact] = c })
                     setCheckinMap(map)
                     setLastRefresh(new Date())
+                }
+                if (badgeTrackingData && typeof badgeTrackingData === 'object') {
+                    setBadgeTrackingMap(badgeTrackingData as Record<string, BadgeTrackingInfo>)
                 }
                 if (validationWorkflow && validationData && typeof validationData === 'object') {
                     setValidationMap(validationData as Record<string, ValidationStatus>)
@@ -652,6 +680,7 @@ export default function InscritsList({ eventId, validationWorkflow }: InscritsLi
                                 group={group}
                                 idEvent={eventId}
                                 scan={checkinMap[group.id_contact] ?? null}
+                                badgeView={badgeTrackingMap[group.id_contact] ?? null}
                                 validationWorkflow={validationWorkflow}
                                 validationStatus={validationWorkflow
                                     ? (validationMap[group.id_contact] ?? 'en_attente')
