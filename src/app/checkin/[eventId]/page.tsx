@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { CheckCircle, XCircle, RefreshCw, User, Settings, MapPin, Mail, Hash, WifiOff, CloudOff } from 'lucide-react'
+import { CheckCircle, XCircle, RefreshCw, User, Settings, MapPin, Mail, Hash, WifiOff, CloudOff, Users, Search, X, Check } from 'lucide-react'
 
 const API_URL = 'https://www.mlg-consulting.com/smart_territory/form/api.php'
 const CHECKIN_API_URL = 'https://www.mlg-consulting.com/smart_territory/form/checkin_api.php'
@@ -11,7 +11,7 @@ const STORAGE_KEY = 'go_identifye_config'
 const OFFLINE_QUEUE_KEY = 'checkin_offline_queue'
 const CONTACT_CACHE_KEY = 'checkin_contact_cache'
 
-type Phase = 'config' | 'scanning' | 'success' | 'error'
+type Phase = 'config' | 'scanning' | 'success' | 'error' | 'manual'
 type SaveStatus = 'pending' | 'saved' | 'failed' | 'queued'
 
 type Config = {
@@ -26,6 +26,15 @@ type Contact = {
     nom: string
     societe?: string
     photo?: string
+}
+
+type Partner = {
+    contact: Contact
+}
+
+type CheckinRecord = {
+    id_contact: string
+    scanned_at?: string
 }
 
 type CheckinPayload = {
@@ -124,10 +133,16 @@ export default function QrCheckinScanner() {
     const [saveStatus, setSaveStatus] = useState<SaveStatus>('pending')
     const [isOnline, setIsOnline] = useState(true)
     const [pendingCount, setPendingCount] = useState(0)
+    const [manualQuery, setManualQuery] = useState('')
+    const [manualResults, setManualResults] = useState<Partner[]>([])
+    const [manualLoading, setManualLoading] = useState(false)
+    const [manualStatus, setManualStatus] = useState<Record<string, SaveStatus>>({})
+    const [checkinMap, setCheckinMap] = useState<Record<string, CheckinRecord>>({})
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const qrRef = useRef<any>(null)
     const cooldownRef = useRef(false)
     const configRef = useRef(config)
+    const manualDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const flushQueue = useCallback(async () => {
         const q = loadQueue()
@@ -305,6 +320,75 @@ export default function QrCheckinScanner() {
         }
     }, [phase, eventId])
 
+    const searchManual = useCallback(async (q: string) => {
+        if (!q || q.length < 2) { setManualResults([]); return }
+        setManualLoading(true)
+        try {
+            const params = `AND cf.id_event=${eventId} AND (c.nom LIKE '%${q}%' OR c.prenom LIKE '%${q}%')`
+            const res = await fetch(`${API_URL}?action=getPartenairesLight&params=${encodeURIComponent(params)}`)
+            const data = await res.json()
+            setManualResults(Array.isArray(data) ? data : [])
+        } catch {
+            setManualResults([])
+        }
+        setManualLoading(false)
+    }, [eventId])
+
+    const handleManualInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value
+        setManualQuery(val)
+        if (manualDebounceRef.current) clearTimeout(manualDebounceRef.current)
+        manualDebounceRef.current = setTimeout(() => searchManual(val), 350)
+    }
+
+    const validateManual = async (contact: Contact) => {
+        setManualStatus(s => ({ ...s, [contact.id_contact]: 'pending' }))
+        const checkinPayload: CheckinPayload = {
+            id_event: String(eventId),
+            id_contact: contact.id_contact,
+            scan_type: 'entree',
+            scan_identifier: configRef.current.scan_identifier,
+            scanner_email: configRef.current.scanner_email,
+            scan_point: configRef.current.scan_point,
+        }
+        try {
+            const result = await postCheckin(checkinPayload)
+            setManualStatus(s => ({ ...s, [contact.id_contact]: result.success ? 'saved' : 'failed' }))
+            if (result.success) {
+                setCheckinMap(m => ({ ...m, [contact.id_contact]: { id_contact: contact.id_contact, scanned_at: new Date().toISOString() } }))
+            }
+        } catch {
+            enqueueCheckin(checkinPayload)
+            setPendingCount(loadQueue().length)
+            setManualStatus(s => ({ ...s, [contact.id_contact]: 'queued' }))
+        }
+    }
+
+    const openManual = () => {
+        if (qrRef.current) {
+            try { qrRef.current.stop().catch(() => { }) } catch { }
+            qrRef.current = null
+        }
+        cooldownRef.current = false
+        setPhase('manual')
+        fetch(`${CHECKIN_API_URL}?action=getCheckinList&id_event=${eventId}`)
+            .then(r => r.json())
+            .then((data: CheckinRecord[]) => {
+                if (!Array.isArray(data)) return
+                const map: Record<string, CheckinRecord> = {}
+                data.forEach(c => { if (!map[c.id_contact]) map[c.id_contact] = c })
+                setCheckinMap(map)
+            })
+            .catch(() => { })
+    }
+
+    const closeManual = () => {
+        setManualQuery('')
+        setManualResults([])
+        cooldownRef.current = false
+        setPhase('scanning')
+    }
+
     const startScan = (e: React.FormEvent) => {
         e.preventDefault()
         if (!config.scan_identifier.trim() || !config.scanner_email.trim() || !config.scan_point.trim()) return
@@ -363,6 +447,7 @@ export default function QrCheckinScanner() {
                         <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-400 rounded-br-2xl" />
                     </div>
                     <div className="absolute top-4 left-4 right-16 bg-black/50 backdrop-blur-sm rounded-xl px-3 py-2 text-xs text-white/70 pointer-events-auto">
+                        <p className="font-bold text-sm text-white tracking-wide">event2one</p>
                         <p className="flex items-center gap-1 truncate"><MapPin size={11} /> {config.scan_point}</p>
                         <p className="flex items-center gap-1 truncate"><Mail size={11} /> {config.scanner_email}</p>
                     </div>
@@ -381,6 +466,17 @@ export default function QrCheckinScanner() {
                     >
                         <Settings size={20} />
                     </button>
+                    {phase === 'scanning' && (
+                        <button
+                            type="button"
+                            onClick={openManual}
+                            title="Émargement manuel"
+                            className="p-2 bg-black/60 backdrop-blur-sm rounded-xl text-white hover:bg-black/80 active:scale-95 transition-transform"
+                            style={{ pointerEvents: 'all' }}
+                        >
+                            <Users size={20} />
+                        </button>
+                    )}
                     {!isOnline && (
                         <div className="flex items-center gap-1.5 bg-orange-500/90 backdrop-blur-sm rounded-xl px-2.5 py-1.5 text-white text-xs font-medium">
                             <WifiOff size={13} />
@@ -499,6 +595,91 @@ export default function QrCheckinScanner() {
                         className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-semibold text-lg active:scale-95 transition-transform">
                         <RefreshCw size={18} /> Réessayer
                     </button>
+                </div>
+            )}
+
+            {/* Émargement manuel */}
+            {phase === 'manual' && (
+                <div className="fixed inset-0 z-20 bg-neutral-950 flex flex-col p-4 sm:p-6 overflow-hidden">
+                    <div className="flex items-start justify-between mb-4 gap-3">
+                        <div>
+                            <p className="font-bold text-sm tracking-wide text-white">event2one</p>
+                            <h1 className="text-xl font-bold">Émargement manuel</h1>
+                            <p className="text-xs text-neutral-500 flex items-center gap-1 mt-1"><MapPin size={11} /> {config.scan_point}</p>
+                        </div>
+                        <button onClick={closeManual}
+                            className="p-2 bg-neutral-800 rounded-xl text-white hover:bg-neutral-700 active:scale-95 transition-transform">
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div className="relative mb-4">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
+                        <input
+                            type="text"
+                            value={manualQuery}
+                            onChange={handleManualInput}
+                            placeholder="Rechercher par nom ou prénom…"
+                            autoFocus
+                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-neutral-800 border border-neutral-700 focus:outline-none focus:border-blue-500 text-white placeholder-neutral-500"
+                        />
+                    </div>
+
+                    {manualLoading && <p className="text-sm text-neutral-400 mb-2">Recherche…</p>}
+                    {!manualLoading && manualQuery.length >= 2 && manualResults.length === 0 && (
+                        <p className="text-sm text-neutral-400 mb-2">Aucun résultat pour « {manualQuery} »</p>
+                    )}
+                    {manualQuery.length < 2 && (
+                        <p className="text-sm text-neutral-500 mb-2">Tapez au moins 2 caractères pour rechercher un inscrit.</p>
+                    )}
+
+                    <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-2 pb-4">
+                        {manualResults.map(({ contact: c }) => {
+                            const status = manualStatus[c.id_contact]
+                            return (
+                                <div key={c.id_contact}
+                                    className="flex items-center gap-3 p-3 rounded-xl bg-neutral-800 border border-neutral-700">
+                                    {c.photo
+                                        ? <img src={`${DIR_IMG}${c.photo}`} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                                        : <div className="w-12 h-12 rounded-full bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                                            <User size={20} className="text-neutral-400" />
+                                        </div>
+                                    }
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold truncate">{c.prenom} {c.nom}</p>
+                                        {c.societe && <p className="text-xs text-neutral-400 truncate">{c.societe}</p>}
+                                        {checkinMap[c.id_contact] && (
+                                            <p className="flex items-center gap-1 text-xs text-emerald-400 mt-0.5">
+                                                <CheckCircle size={11} />
+                                                Déjà badgé{checkinMap[c.id_contact].scanned_at ? ` à ${checkinMap[c.id_contact].scanned_at!.slice(11, 16)}` : ''}
+                                            </p>
+                                        )}
+                                    </div>
+                                    {status === 'saved' && (
+                                        <span className="flex items-center gap-1 text-green-400 text-xs font-medium px-3 py-2">
+                                            <Check size={16} /> Validé
+                                        </span>
+                                    )}
+                                    {status === 'queued' && (
+                                        <span className="flex items-center gap-1 text-orange-400 text-xs font-medium px-3 py-2">
+                                            <CloudOff size={16} /> En attente
+                                        </span>
+                                    )}
+                                    {(status === undefined || status === 'failed') && (
+                                        <button onClick={() => validateManual(c)}
+                                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 transition-transform text-white text-sm font-semibold flex-shrink-0">
+                                            <CheckCircle size={16} /> {status === 'failed' ? 'Réessayer' : 'Valider'}
+                                        </button>
+                                    )}
+                                    {status === 'pending' && (
+                                        <span className="flex items-center gap-1 text-yellow-400 text-xs font-medium px-3 py-2">
+                                            <RefreshCw size={14} className="animate-spin" />
+                                        </span>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
             )}
         </div>
