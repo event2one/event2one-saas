@@ -456,7 +456,7 @@ export default function QrCheckinScanner() {
             )}
 
             {/* Settings + network badges — z-index inline pour passer au-dessus des éléments html5-qrcode */}
-            {phase !== 'config' && (
+            {phase !== 'config' && phase !== 'manual' && (
                 <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 9999 }} className="flex flex-col items-end gap-2">
                     <button
                         type="button"

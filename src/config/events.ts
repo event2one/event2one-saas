@@ -43,6 +43,13 @@ export type EventConfig = {
     /** Keys from the FIELDS array in register/page.tsx */
     hiddenFields?: string[]
     requiredFields?: string[]
+    /**
+     * Champs additionnels affichés sur le formulaire borne (/onsite/register), en plus du
+     * socle prénom/nom/email/société. Clés possibles : 'fonction' | 'pays' | 'ville' | 'port'
+     */
+    onsiteExtraFields?: string[]
+    /** Statut (id_event_contact_type) appliqué aux inscriptions créées via la borne onsite. Défaut : 143 */
+    onsiteDefaultStatut?: number
     /** Title shown above the form intro */
     formTitle?: string
     /** Intro text shown at the top of the registration form (supports \n\n paragraphs) */
