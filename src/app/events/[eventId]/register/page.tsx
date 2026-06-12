@@ -333,19 +333,11 @@ function RegisterPageInner() {
                     if (!id_conferencier) throw new Error(`Inscription à la session ${id_conf_event} échouée.`)
                 }
             } else {
-                // Fallback: create a generic slot and link the contact
-                const ceRes = await fetch(`${API_URL}?action=createConfEvent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_event: eventId }),
-                })
-                const id_conf_event = parseInt(JSON.parse(await ceRes.text()), 10)
-                if (!id_conf_event) throw new Error('La création du créneau a échoué.')
-
+                // Fallback: no program session selected — register without conf_event
                 const confRes = await fetch(`${API_URL}?action=createConferencier`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_contact, id_conf_event, statut: participationTypeId || 143, id_event: eventId, is_speaker: isSpeaker ? 1 : 0 }),
+                    body: JSON.stringify({ id_contact, id_conf_event: '', statut: participationTypeId || 143, id_event: eventId, is_speaker: isSpeaker ? 1 : 0 }),
                 })
                 const confRaw = JSON.parse(await confRes.text())
                 const id_conferencier =

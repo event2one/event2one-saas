@@ -70,19 +70,11 @@ export default function OnsiteRegisterPage() {
                     : contactData?.id_contact
             if (!id_contact) throw new Error('La création du contact a échoué.')
 
-            // 2. Créneau générique + association
-            const ceRes = await fetch(`${API_URL}?action=createConfEvent`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_event: eventId }),
-            })
-            const id_conf_event = parseInt(JSON.parse(await ceRes.text()), 10)
-            if (!id_conf_event) throw new Error('La création du créneau a échoué.')
-
+            // 2. Inscription à l'event (sans conf_event)
             const confRes = await fetch(`${API_URL}?action=createConferencier`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_contact, id_conf_event, statut: cfg.onsiteDefaultStatut ?? DEFAULT_STATUT, id_event: eventId }),
+                body: JSON.stringify({ id_contact, id_conf_event: '', statut: cfg.onsiteDefaultStatut ?? DEFAULT_STATUT, id_event: eventId }),
             })
             const confRaw = JSON.parse(await confRes.text())
             const id_conferencier =

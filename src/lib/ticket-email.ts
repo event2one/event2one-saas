@@ -9,7 +9,7 @@ export type TicketContact = {
     nom: string
 }
 
-export function buildTicketEmailHtml(cfg: EventConfig, contact: TicketContact, badgeUrl: string | null): string {
+export function buildTicketEmailHtml(cfg: EventConfig, contact: TicketContact, badgeUrl: string | null, introParagraphs?: string[]): string {
     const color = cfg.primaryColor ?? '#000000'
     const headerImageUrl = cfg.headerImageUrl
     const footerImageUrl = cfg.footerImageUrl
@@ -17,6 +17,16 @@ export function buildTicketEmailHtml(cfg: EventConfig, contact: TicketContact, b
     const contactEmail = cfg.email?.contactEmail
     const signatureName = cfg.email?.signatureName
     const closingText = cfg.email?.closingText || 'Bien cordialement,'
+
+    const defaultIntro = [
+        `Merci pour votre réponse — votre présence à <strong>${eventName}</strong> est désormais définitivement confirmée.`,
+        `<strong style="color:#dc2626">Places limitées dans l'Atrium principal</strong> — L'accès à la salle principale est réservé aux premiers arrivés sur place, dans la limite des capacités d'accueil. Des espaces de retransmission en direct seront disponibles pour les autres participants.`,
+        `Voici votre billet d'entrée définitif avec QR Code : imprimez-le ou présentez-le directement depuis votre téléphone à l'accueil le jour J.`,
+    ]
+
+    const introHtml = (introParagraphs ?? defaultIntro)
+        .map(p => `<p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;font-family:${FONT}">${p}</p>`)
+        .join('')
 
     const badgeBlock = badgeUrl ? `
       <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0">
@@ -36,9 +46,7 @@ export function buildTicketEmailHtml(cfg: EventConfig, contact: TicketContact, b
         ${headerImageUrl ? `<tr><td style="padding:0;line-height:0"><img src="${headerImageUrl}" alt="" width="600" style="width:100%;max-width:600px;display:block"></td></tr>` : ''}
         <tr><td style="padding:40px;font-family:${FONT}">
           <p style="margin:0 0 16px;font-size:15px;color:#374151;font-family:${FONT}">Bonjour <strong>${contact.prenom} ${contact.nom}</strong>,</p>
-          <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;font-family:${FONT}">Merci pour votre réponse — votre présence à <strong>${eventName}</strong> est désormais définitivement confirmée.</p>
-          <p style="margin:0 0 16px;font-size:15px;color:#dc2626;font-weight:bold;line-height:1.6;font-family:${FONT}">Places limitées dans l'Atrium principal — L'accès à la salle principale est réservé aux premiers arrivés sur place, dans la limite des capacités d'accueil. Des espaces de retransmission en direct seront disponibles pour les autres participants.</p>
-          <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;font-family:${FONT}">Voici votre billet d'entrée définitif avec QR Code : imprimez-le ou présentez-le directement depuis votre téléphone à l'accueil le jour J.</p>
+          ${introHtml}
           ${badgeBlock}
           <p style="margin:8px 0 0;font-size:14px;color:#6b7280;line-height:1.6;font-family:${FONT}">
             ${closingText}${signatureName ? `<br><strong>${signatureName}</strong>` : ''}${contactEmail ? `${signatureName ? '<br>' : ''}<a href="mailto:${contactEmail}" style="color:${color};font-family:${FONT}">${contactEmail}</a>` : ''}
