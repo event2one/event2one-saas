@@ -7,7 +7,7 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
     PieChart, Pie, Cell, Legend,
 } from 'recharts'
-import { Users, UserCheck, TrendingUp, Gauge, RefreshCw, Radio } from 'lucide-react'
+import { Users, UserCheck, TrendingUp, Gauge, RefreshCw, Radio, FileDown } from 'lucide-react'
 import { EVENT_CONFIG } from '@/config/events'
 
 const REFRESH_INTERVAL_MS = 30_000
@@ -154,9 +154,19 @@ export default function OnsiteStatsPage() {
                         <h1 className="text-3xl md:text-4xl font-extrabold leading-tight bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent!">{eventName}</h1>
                         <p className="text-white/50! text-sm mt-1">Tableau de bord — affluence et inscriptions</p>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-white/50">
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        {lastUpdated ? `Mis à jour à ${lastUpdated.toLocaleTimeString('fr-FR')}` : 'Chargement…'}
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 text-xs text-white/50!">
+                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                            {lastUpdated ? `Mis à jour à ${lastUpdated.toLocaleTimeString('fr-FR')}` : 'Chargement…'}
+                        </div>
+                        <a
+                            href={`/saas/events/${eventId}/onsite/stats/report`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 text-xs font-medium text-white/80! hover:bg-white/10 transition-colors"
+                        >
+                            <FileDown size={14} /> Télécharger le rapport (PDF)
+                        </a>
                     </div>
                 </motion.div>
 
@@ -225,6 +235,16 @@ export default function OnsiteStatsPage() {
                                 <Bar dataKey="scans" name="Scans totaux" fill="#60a5fa" radius={[6, 6, 0, 0]} animationDuration={900} fillOpacity={0.35} />
                             </BarChart>
                         </ResponsiveContainer>
+                        <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs">
+                            <span className="flex items-center gap-1.5 text-white/60!">
+                                <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: '#2dd4bf' }} />
+                                <strong className="text-white/90! font-medium">Personnes (1er scan)</strong> — nouvelles arrivées, chaque personne comptée une seule fois sur la journée
+                            </span>
+                            <span className="flex items-center gap-1.5 text-white/60!">
+                                <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: '#60a5fa' }} />
+                                <strong className="text-white/90! font-medium">Scans totaux</strong> — tous les badgeages, y compris les repassages sur un autre point de contrôle
+                            </span>
+                        </div>
                     </motion.div>
 
                     {/* Répartition par point de scan */}
